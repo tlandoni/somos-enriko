@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   color: #ffffff;
   background: #08070d;
 
@@ -45,7 +45,7 @@ body {
 
 body,
 button {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
 }
 
 button {
@@ -73,8 +73,13 @@ h1,
 h2,
 h3,
 .marca-textos strong,
-.pie-marca strong {
-  font-family: 'Barlow Condensed', sans-serif;
+.pie-marca strong,
+.acceso-numero,
+.puesto,
+.partido-resultado strong,
+.integrante-iniciales,
+.contador-integrantes strong {
+  font-family: 'Archivo Narrow', sans-serif;
 }
 
 .sitio {
@@ -122,7 +127,8 @@ h3,
 .marca-textos strong {
   font-size: 27px;
   line-height: 1;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 .marca-textos small {
@@ -277,7 +283,7 @@ h3,
 }
 
 .portada-textos {
-  max-width: 720px;
+  max-width: 700px;
 }
 
 .portada-textos .etiqueta {
@@ -286,13 +292,17 @@ h3,
 }
 
 .portada h1 {
+  text-transform: uppercase;
+font-weight: 700;
+letter-spacing: -3px;
   margin-bottom: 20px;
   color: white;
   font-size: clamp(64px, 10vw, 130px);
   font-weight: 900;
   line-height: 0.79;
   letter-spacing: -2px;
-  text-shadow: 0 5px 25px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 5px 25px rgba(0, 0, 0, 0.6)
+  ;
 }
 
 .portada h1 span {

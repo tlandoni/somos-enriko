@@ -499,7 +499,7 @@ individuales y la química entre compañeros
                       <span>ENRIKO</span>
                     </h1>
                     <p className="portada-descripcion">
-                      Un rincón de comunidad en el corazón de Buenos Aires
+                      Para un Enriko no hay nada mejor que otro Enriko
                     </p>
                   </div>
                 </div>
