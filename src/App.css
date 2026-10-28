@@ -1127,3 +1127,112 @@ tbody tr:hover {
        2px  2px 0 #08070d,
        0 4px 15px #000000;
   }
+  
+.mundial-contenido {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.mundial-intro {
+  max-width: 680px;
+  margin-bottom: 0.5rem;
+}
+
+.mundial-intro h2 {
+  margin: 0.5rem 0;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.mundial-intro p {
+  line-height: 1.65;
+  opacity: 0.82;
+}
+
+.mundial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 1rem;
+}
+
+.mundial-card {
+  padding: 1.2rem;
+  border: 1px solid rgba(155, 110, 255, 0.35);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+  min-width: 0;
+}
+
+.mundial-campeon {
+  border-color: #d6b65d;
+  background: linear-gradient(
+    145deg,
+    rgba(214, 182, 93, 0.13),
+    rgba(120, 70, 190, 0.08)
+  );
+}
+
+.mundial-card-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1.4rem;
+}
+
+.mundial-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 50%;
+  background: #6d39b5;
+  color: white;
+  font-weight: 800;
+}
+
+.mundial-identidad {
+  min-width: 0;
+  flex: 1;
+}
+
+.mundial-identidad h3 {
+  margin: 0 0 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+.mundial-identidad span,
+.integrante-logro {
+  font-size: 0.82rem;
+  opacity: 0.78;
+}
+
+.mundial-corona {
+  font-size: 1.5rem;
+}
+
+.mundial-dato {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.mundial-dato strong {
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.mundial-historico strong {
+  color: #d9c4ff;
+}
+
+.mundial-campeon .mundial-historico strong {
+  color: #e5c86d;
+}
+
+.integrante-logro {
+  display: inline-block;
+  margin-top: 0.35rem;
+  line-height: 1.45;
+}

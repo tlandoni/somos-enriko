@@ -8,6 +8,7 @@ const SECCIONES = [
   '¿Quiénes Somos Enriko?',
   'Calendario',
   'Estadísticas',
+  'Mundial Personal 🌎',
   'Pronosticador',
   'Nosotros',
 ]
@@ -75,6 +76,9 @@ function App() {
   const [duplas, setDuplas] = useState([])
   const [partidos, setPartidos] = useState([])
   const [jugadores, setJugadores] = useState([])
+  const [mundial, setMundial] = useState([])
+const [cargandoMundial, setCargandoMundial] = useState(true)
+const [errorMundial, setErrorMundial] = useState(null)
 
   const [cargando, setCargando] = useState(true)
   const [errores, setErrores] = useState({})
@@ -145,7 +149,35 @@ function App() {
       activo = false
     }
   }, [])
-
+  useEffect(() => {
+    let activo = true
+  
+    async function cargarMundial() {
+      setCargandoMundial(true)
+      setErrorMundial(null)
+  
+      const { data, error } = await supabase.rpc(
+        'mundial_personal_estados'
+      )
+  
+      if (!activo) return
+  
+      if (error) {
+        setErrorMundial(error.message)
+        setMundial([])
+      } else {
+        setMundial(data || [])
+      }
+  
+      setCargandoMundial(false)
+    }
+  
+    cargarMundial()
+  
+    return () => {
+      activo = false
+    }
+  }, [])
   function navegar(destino) {
     setSeccion(destino)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -170,7 +202,7 @@ function App() {
     }
 
     if (cargando) {
-      return <SinDatos>Cargando estadísticas del club…</SinDatos>
+      return <SinDatos>Cargando estadísticas…</SinDatos>
     }
 
     if (!ranking.length) {
@@ -360,6 +392,102 @@ function App() {
     )
   }
 
+  function renderMundialPersonal() {
+    if (cargandoMundial) {
+      return <SinDatos>Calculando las campañas mundialistas…</SinDatos>
+    }
+  
+    if (errorMundial) {
+      return (
+        <ErrorDatos
+          mensaje={`No pudimos cargar el Mundial Personal: ${errorMundial}`}
+        />
+      )
+    }
+  
+    if (!mundial.length) {
+      return <SinDatos>No hay jugadores para mostrar.</SinDatos>
+    }
+  
+    const ordenEstados = {
+      'Campeón del mundo': 7,
+      'Final': 6,
+      'Partido por el tercer puesto': 5,
+      'Semifinal': 4,
+      'Cuartos de final': 3,
+      'Octavos de final': 2,
+      'Fase de grupos': 1,
+    }
+  
+    const jugadoresOrdenados = [...mundial].sort((a, b) => {
+      if (a.es_campeon !== b.es_campeon) {
+        return a.es_campeon ? -1 : 1
+      }
+  
+      const rangoA = ordenEstados[a.estado_actual] || 0
+      const rangoB = ordenEstados[b.estado_actual] || 0
+  
+      return rangoB - rangoA || a.nombre.localeCompare(b.nombre, 'es')
+    })
+  
+    return (
+      <div className="mundial-contenido">
+        <div className="mundial-intro">
+          <span className="mini-etiqueta">CADA PARTIDO CUENTA</span>
+          <h2>El camino a la gloria.</h2>
+          <p>
+            Cada jugador disputa su propio Mundial. La campaña actual
+            puede cambiar; la gloria conquistada queda para siempre.
+          </p>
+        </div>
+  
+        <div className="mundial-grid">
+          {jugadoresOrdenados.map((jugador) => (
+            <article
+              className={`mundial-card ${jugador.es_campeon ? 'mundial-campeon' : ''}`}
+              key={jugador.jugador_id}
+            >
+              <div className="mundial-card-cabecera">
+                <span className="mundial-avatar">
+                  {(jugador.nombre || '?').trim().charAt(0).toUpperCase()}
+                </span>
+  
+                <div className="mundial-identidad">
+                  <h3>{jugador.nombre}</h3>
+                  <span>
+                    {jugador.partidos_oficiales} partidos oficiales
+                  </span>
+                </div>
+  
+                {jugador.es_campeon && (
+                  <span className="mundial-corona" title="Campeón histórico">
+                    🏆
+                  </span>
+                )}
+              </div>
+  
+              <div className="mundial-dato">
+                <span className="mini-etiqueta">ESTADO ACTUAL</span>
+                <strong>{jugador.estado_actual}</strong>
+              </div>
+  
+              <div className="mundial-dato mundial-historico">
+                <span className="mini-etiqueta">
+                  {jugador.es_campeon ? 'GLORIA ETERNA' : 'MEJOR HISTÓRICO'}
+                </span>
+                <strong>
+                  {jugador.es_campeon
+                    ? '🏆 Campeón del mundo'
+                    : jugador.mejor_historico}
+                </strong>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  
   function renderNosotros() {
     if (errores.jugadores) return renderError('jugadores')
 
@@ -393,7 +521,24 @@ function App() {
               </div>
 
               <h3>{jugador.nombre}</h3>
-              <span>Integrante del club</span>
+
+{(() => {
+  const campania = mundial.find(
+    (item) => String(item.jugador_id) === String(jugador.id)
+  )
+
+  if (!campania) {
+    return <span>Enriko</span>
+  }
+
+  return (
+    <span className="integrante-logro">
+      {campania.es_campeon
+        ? '🏆 Campeón del mundo'
+        : campania.mejor_historico}
+    </span>
+  )
+})()}
             </article>
           ))}
         </div>
@@ -403,7 +548,18 @@ function App() {
 
   function renderContenido() {
     switch (seccion) {
-      case 'Calendario':
+      case 'Mundial Personal 🌎':
+  return (
+    <section className="pagina interior">
+      <p className="etiqueta">LA GLORIA ES PERSONAL</p>
+      <h1>Mundial Personal<span>🌎</span></h1>
+      <p className="bajada">
+        Una copa para dominarlos a todos (?)
+      </p>
+
+      {renderMundialPersonal()}
+    </section>
+  )case 'Calendario':
         return (
           <section className="pagina interior">
             <p className="etiqueta">PARTIDOS Y EVENTOS ENRIKENSES</p>
@@ -521,9 +677,9 @@ individuales y la química entre compañeros
                 <p className="etiqueta">MÁS QUE UN EQUIPO</p>
                 <h2>¿Quiénes somos?</h2>
                 <p>
-                  Somos Enriko es un club social, cultural y deportivo.
+                  Somos Enriko.
                   Nos encontramos alrededor del fútbol y construimos,
-                  partido a partido, una historia compartida.
+                  sábado a sábado, una historia compartida.
                 </p>
                 <p>
                   Esta web es nuestro lugar para registrar lo que jugamos,
@@ -542,7 +698,7 @@ individuales y la química entre compañeros
             <section className="bloque">
               <div className="encabezado-bloque">
                 <div>
-                  <p className="etiqueta">RECORRÉ EL CLUB</p>
+                  <p className="etiqueta">RECORRÉ EL GRUPO</p>
                   <h2>Todo lo que somos.</h2>
                 </div>
               </div>
@@ -570,7 +726,7 @@ individuales y la química entre compañeros
                 <TarjetaSeccion
                   numero="04"
                   titulo="Nosotros"
-                  descripcion="Las personas que forman el club."
+                  descripcion="Los Enrikos"
                   onClick={() => navegar('Nosotros')}
                 />
               </div>
