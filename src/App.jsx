@@ -4,8 +4,9 @@ import './App.css'
 import TeamSelector from './TeamSelector'
 
 
+
 const SECCIONES = [
-  '¿Quiénes Somos Enriko?',
+  '¿Quiénes somos?',
   'Calendario',
   'Estadísticas',
   'Mundial Personal 🌎',
@@ -13,6 +14,7 @@ const SECCIONES = [
   'Pronosticador',
   'Nosotros',
 ]
+
 
 function formatearFecha(fecha) {
   if (!fecha) return 'Fecha no disponible'
@@ -75,6 +77,8 @@ function App() {
 
   const [ranking, setRanking] = useState([])
   const [puntosJugadores, setPuntosJugadores] = useState([])
+  const [arbolJugadores, setArbolJugadores] = useState([])
+  const [insignias, setInsignias] = useState([])
   const [duplas, setDuplas] = useState([])
   const [partidos, setPartidos] = useState([])
   const [resumenPartidos, setResumenPartidos] = useState(null)
@@ -110,47 +114,54 @@ const [avisoMuro, setAvisoMuro] = useState('')
     async function cargarDatos() {
       setCargando(true)
 
-      const resultados = await Promise.all([
-        supabase
-          .from('resumen_partidos')
-         .select('*')
-         .single(),
-        
-        supabase
-          .from('ranking_completo')
-          .select('*')
-          .order('porcentaje_victorias', {
-            ascending: false,
-            nullsFirst: false,
-          }),
-          supabase
-          .from('puntos_jugadores')
-          .select('*')
-          .order('puntos', {
-            ascending: false,
-          })
-          .order('promedio_puntos', {
-            ascending: false,
-          }),
-        supabase
-          .from('ranking_duplas')
-          .select('*')
-          .order('indice_quimica', {
-            ascending: false,
-            nullsFirst: false,
-          })
-          .limit(20),
+      
+const resultados = await Promise.all([
+  supabase
+    .from('resumen_partidos')
+    .select('*')
+    .single(),
 
-        supabase
-          .from('partidos')
-          .select('*')
-          .order('fecha', { ascending: false }),
+  supabase
+    .from('ranking_completo')
+    .select('*')
+    .order('porcentaje_victorias', {
+      ascending: false,
+      nullsFirst: false,
+    }),
 
-        supabase
-          .from('jugadores')
-          .select('*')
-          .order('nombre', { ascending: true }),
-      ])
+  supabase
+    .from('puntos_jugadores')
+    .select('*')
+    .order('puntos', { ascending: false })
+    .order('promedio_puntos', { ascending: false }),
+
+  supabase
+    .from('ranking_duplas')
+    .select('*')
+    .order('indice_quimica', {
+      ascending: false,
+      nullsFirst: false,
+    })
+    .limit(20),
+
+  supabase
+    .from('partidos')
+    .select('*')
+    .order('fecha', { ascending: false }),
+
+  supabase
+    .from('jugadores')
+    .select('*')
+    .order('nombre', { ascending: true }),
+
+  supabase
+    .from('arbol_jugadores')
+    .select('*'),
+
+  supabase
+    .from('insignias')
+    .select('*'),
+])
 
       if (!activo) return
 
@@ -161,6 +172,8 @@ const [avisoMuro, setAvisoMuro] = useState('')
         'duplas',
         'partidos',
         'jugadores',
+        'arbolJugadores',
+        'insignias',
       ]
       
       const nuevosErrores = {}
@@ -175,10 +188,14 @@ const [avisoMuro, setAvisoMuro] = useState('')
       setRanking(resultados[1].data || [])
       setPuntosJugadores(resultados[2].data || [])
       setDuplas(resultados[3].data || [])
+      
       setPartidos(resultados[4].data || [])
       setJugadores(resultados[5].data || [])
+      setArbolJugadores(resultados[6].data || [])
+      setInsignias(resultados[7].data || [])
       setErrores(nuevosErrores)
       setCargando(false)
+
     }
 
     cargarDatos()
@@ -301,6 +318,13 @@ const [avisoMuro, setAvisoMuro] = useState('')
     navegar('Calendario')
   }
 
+  function irAExplorar() {
+     document.getElementById('explorar')?.scrollIntoView({
+       behavior: 'smooth',
+       block: 'start',
+     })
+  }
+  
   function renderError(clave) {
     if (!errores[clave]) return null
     return <ErrorDatos mensaje={errores[clave]} />
@@ -760,7 +784,7 @@ function renderTablaPuntos() {
   
       return rangoB - rangoA || a.nombre.localeCompare(b.nombre, 'es')
     })
-  
+
     return (
       <div className="mundial-contenido">
         <div className="mundial-intro">
@@ -772,6 +796,23 @@ function renderTablaPuntos() {
           </p>
         </div>
   
+  
+<div className="mundial-diego">
+  <img
+    src="/images/maradona-silueta.png"
+    alt="Silueta de Diego Maradona"
+    className="mundial-diego-imagen"
+  />
+  <div className="mundial-diego-texto">
+    <span className="mundial-diego-etiqueta">
+      EL SUEÑO DE TODO ENRIKO
+    </span>
+    <p>
+      Siete partidos. Una consagración. La gloria eterna.
+    </p>
+  </div>
+</div>
+
         <div className="mundial-grid">
           {jugadoresOrdenados.map((jugador) => (
             <article
@@ -806,11 +847,20 @@ function renderTablaPuntos() {
                 <span className="mini-etiqueta">
                   {jugador.es_campeon ? 'GLORIA ETERNA' : 'MEJOR HISTÓRICO'}
                 </span>
+                
+              
+
                 <strong>
-                  {jugador.es_campeon
-                    ? '🏆 Campeón del mundo'
-                    : jugador.mejor_historico}
-                </strong>
+  {jugador.es_campeon
+    ? '🏆 Campeón del mundo'
+    : (!jugador.mejor_historico ||
+        jugador.mejor_historico === 'Sin clasificar')
+      ? 'Fase de grupos'
+      : jugador.mejor_historico}
+</strong>
+
+
+
               </div>
             </article>
           ))}
@@ -829,7 +879,8 @@ function renderTablaPuntos() {
     if (!jugadores.length) {
       return <SinDatos>No hay integrantes registrados todavía.</SinDatos>
     }
-
+      console.log('Árbol de integrantes:', arbolJugadores)
+      console.log('Insignias recibidas:', insignias)
     return (
       <>
         <div className="comunidad-cabecera">
@@ -844,35 +895,125 @@ function renderTablaPuntos() {
           </div>
         </div>
 
-        <div className="integrantes-grid">
-          {jugadores.map((jugador) => (
-            <article className="integrante-card" key={jugador.id}>
-              <div className="integrante-iniciales" aria-hidden="true">
-                {(jugador.nombre || '?').trim().charAt(0).toUpperCase()}
-              </div>
+        
+<div className="integrantes-grid">
+  {jugadores.map((jugador) => {
+    const ingreso = arbolJugadores.find(
+      (item) => item.jugador === jugador.nombre
+    )
 
-              <h3>{jugador.nombre}</h3>
+    const esFundador = ['Enrico', 'Hugo'].includes(jugador.nombre)
 
-{(() => {
-  const campania = mundial.find(
-    (item) => String(item.jugador_id) === String(jugador.id)
-  )
+    const insigniasJugador = insignias.filter(
+      (item) => String(item.jugador_id) === String(jugador.id)
+    )
 
-  if (!campania) {
-    return <span>Enriko</span>
-  }
+    const conteoInvitados = arbolJugadores.reduce((conteo, item) => {
+      const padrino = item.introducido_por
 
-  return (
-    <span className="integrante-logro">
-      {campania.es_campeon
+      if (padrino && !['Fundador', 'Sin información'].includes(padrino)) {
+        conteo[padrino] = (conteo[padrino] || 0) + 1
+      }
+
+      return conteo
+    }, {})
+
+    const maxInvitados = Math.max(0, ...Object.values(conteoInvitados))
+
+    const esPrincipalConstructor =
+      !esFundador &&
+      maxInvitados > 0 &&
+      (conteoInvitados[jugador.nombre] || 0) === maxInvitados
+
+    const campania = mundial.find(
+      (item) => String(item.jugador_id) === String(jugador.id)
+    )
+
+    const emblemas = {
+      '10Y_CAMPEON': {
+        icono: '🏆',
+        nombre: 'Campeón aniversario',
+        color: 'campeon',
+      },
+      '10Y_PARTICIPANTE': {
+        icono: '🏅',
+        nombre: 'Participante aniversario',
+        color: 'participante',
+      },
+      SALVADOR_FULBITO: {
+        icono: '🆘',
+        nombre: 'Salvador del fulbito',
+        color: 'salvador',
+      },
+    }
+
+    return (
+      <article className="integrante-card" key={jugador.id}>
+        <div className="integrante-iniciales" aria-hidden="true">
+          {(jugador.nombre || '?').trim().charAt(0).toUpperCase()}
+        </div>
+
+        <h3>{jugador.nombre}</h3>
+
+        {esFundador ? (
+          <span className="integrante-logro">★ Fundador</span>
+        ) : (
+          <p className="integrante-ingreso">
+            Invitado por: {ingreso?.introducido_por || 'Sin información'}
+          </p>
+        )}
+
+        {esPrincipalConstructor && (
+          <span className="integrante-logro integrante-constructor">
+            🏗️ Principal constructor
+          </span>
+        )}
+
+<div className="integrante-mundial">
+  <p className="integrante-mundial-titulo">
+    🌎 Mundial Personal
+  </p>
+
+  <span
+    className={`integrante-mundial-estado ${
+      campania?.es_campeon ? 'es-campeon' : ''
+    }`}
+  >
+    {!campania
+      ? 'Fase de grupos'
+      : campania.es_campeon
         ? '🏆 Campeón del mundo'
         : campania.mejor_historico}
-    </span>
-  )
-})()}
-            </article>
-          ))}
-        </div>
+  </span>
+</div>
+
+        {insigniasJugador.length > 0 && (
+          <div className="integrante-insignias">
+            {insigniasJugador.map((insignia) => {
+              const emblema = emblemas[insignia.codigo] || {
+                icono: '🎖️',
+                nombre: insignia.codigo,
+                color: 'especial',
+              }
+
+              return (
+                <span
+                  className={`integrante-insignia insignia-${emblema.color}`}
+                  key={insignia.id}
+                  title={`${emblema.nombre}: ${insignia.descripcion}`}
+                  aria-label={`${emblema.nombre}: ${insignia.descripcion}`}
+                  role="img"
+                >
+                  {emblema.icono}
+                </span>
+              )
+            })}
+          </div>
+        )}
+      </article>
+    )
+  })}
+</div>
       </>
     )
   }
@@ -961,16 +1102,16 @@ individuales y la química entre compañeros
               <h1>El Muro Enriko<span> ✍️</span></h1>
               <p className="bajada">
                 Declaraciones, recuerdos, cargadas y manifiestos.
-                Lo que pasa en la cancha también se escribe.
+                Lo que pasa en la cancha...
               </p>
   
               <div className="muro-contenido">
                 <div className="muro-presentacion">
                   <span className="muro-sello">MURO OFICIAL ENRIKENSE</span>
-                  <h2>Dejá tu marca.</h2>
+                  <h2>Dejá tu huella</h2>
                   <p>
                     Una pared, infinitas historias. Escribí algo que
-                    merezca quedar en la memoria del club.
+                    merezca quedar en la memoria enrikense
                   </p>
                 </div>
   
@@ -1102,126 +1243,190 @@ individuales y la química entre compañeros
       case '¿Quiénes somos?':
       default:
         return (
-          <>
-            <section className="portada">
-              <div className="portada-contenido">
-                <div className="portada-marca">
-                  <img
-                    src="/escudo-somos-enriko.jpg"
-                    alt="Escudo del Club Social y Deportivo Somos Enriko"
-                    className="escudo-portada"
-                  />
+          
+<>
+  <section className="portada">
+    <div className="portada-contenido">
+      <div className="portada-marca">
+        <img
+          src="/escudo-somos-enriko.jpg"
+          alt="Escudo del Club Social y Deportivo Somos Enriko"
+          className="escudo-portada"
+        />
 
-                  <div className="portada-textos">
-                    <p className="etiqueta">CLUB SOCIAL, CULTURAL Y DEPORTIVO</p>
-                    <h1>
-                      SOMOS
-                      <br />
-                      <span>ENRIKO</span>
-                    </h1>
-                    <p className="portada-descripcion">
-                      Para un Enriko no hay nada mejor que otro Enriko
-                    </p>
-                  </div>
-                </div>
+        <div className="portada-textos">
+          <p className="etiqueta">
+            CLUB SOCIAL, CULTURAL Y DEPORTIVO
+          </p>
 
-                <div className="portada-pie">
-                  <span>DE LA CANCHA A LA PLACITA, DE LA PLACITA AL MUNDO, AHORA EN LA WEB</span>
-                  <button
-                    className="boton-principal"
-                    onClick={irAEstadisticas}
-                  >
-                    Explorar estadísticas <span>↗</span>
-                  </button>
-                </div>
-              </div>
-            </section>
+          <h1>
+            SOMOS
+            <br />
+            <span>ENRIKO</span>
+          </h1>
 
-            <section className="bloque comunidad-intro">
-              <div className="introduccion-club">
-                <p className="etiqueta">MÁS QUE UN EQUIPO</p>
-                <h2>¿Quiénes somos?</h2>
-                <p>
-                  Somos Enriko.
-                  Nos encontramos alrededor del fútbol y construimos,
-                  sábado a sábado, una historia compartida.
-                </p>
-                <p>
-                  Esta web es nuestro lugar para registrar lo que jugamos,
-                  recuperar lo que vivimos y compartir lo que hacemos
-                  dentro y fuera de la cancha.
-                </p>
-              </div>
+          <p className="portada-descripcion">
+            Para un Enriko no hay nada mejor que otro Enriko
+          </p>
+        </div>
+      </div>
 
-              <img
-                src="/escudo-somos-enriko.jpg"
-                alt=""
-                className="escudo-intro"
-              />
-            </section>
+      <div className="portada-pie">
+        <span>
+          DE LA CANCHA A LA PLACITA, DE LA PLACITA AL MUNDO,
+          AHORA EN LA WEB
+        </span>
 
-            <section className="bloque">
-              <div className="encabezado-bloque">
-                <div>
-                  <p className="etiqueta">RECORRÉ EL GRUPO</p>
-                  <h2>Todo lo que somos.</h2>
-                </div>
-              </div>
+        <div className="portada-acciones">
+          <button
+            className="boton-principal"
+            onClick={irAExplorar}
+          >
+            Explorá <span>↓</span>
+          </button>
 
-              <div className="accesos-grid">
-                <TarjetaSeccion
-                  numero="01"
-                  titulo="Calendario"
-                  descripcion="Fechas, partidos y resultados."
-                  onClick={irACalendario}
-                />
+          <button
+            className="boton-secundario"
+            onClick={irAEstadisticas}
+          >
+            Ver ranking de puntos <span>↗</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
 
-                <TarjetaSeccion
-                  numero="02"
-                  titulo="Estadísticas"
-                  descripcion="Jugadores, duplas y rendimiento."
-                  onClick={irAEstadisticas}
-                />
-              <TarjetaSeccion
-  numero="03"
-  titulo="Pronosticador"
-  descripcion="Armá los equipos y dejá que hable el Oráculo."
-  onClick={() => navegar('Pronosticador')}
-/>
-                <TarjetaSeccion
-                  numero="04"
-                  titulo="Nosotros"
-                  descripcion="Los Enrikos"
-                  onClick={() => navegar('Nosotros')}
-                />
-              </div>
-            </section>
+  <section className="bloque comunidad-intro">
+    <div className="introduccion-club">
+      <p className="etiqueta">MÁS QUE UN EQUIPO</p>
+      <h2>¿Quiénes somos?</h2>
 
-            <section className="bloque">
-              <div className="encabezado-bloque">
-                <div>
-                  <p className="etiqueta">LOS NÚMEROS</p>
-                  <h2>La historia también se cuenta.</h2>
-                </div>
+      <p>
+        Somos Enriko. Nos encontramos alrededor del fútbol
+        y construimos, sábado a sábado, una historia compartida.
+      </p>
 
-                <button className="enlace" onClick={irAEstadisticas}>
-                  Ver estadísticas ↗
-                </button>
-              </div>
+      <p>
+        Esta web es nuestro lugar para registrar lo que jugamos,
+        recuperar lo que vivimos y compartir lo que hacemos
+        dentro y fuera de la cancha.
+      </p>
+    </div>
 
-              {errores.ranking ? (
-                renderError('ranking')
-              ) : cargando ? (
-                <SinDatos>Cargando el ranking…</SinDatos>
-              ) : ranking.length === 0 ? (
-                <SinDatos>
-                  Todavía no hay estadísticas individuales disponibles.
-                </SinDatos>
-              ) : (
-                renderRankingIndividual(5)
-              )}
-            </section>
-          </>
+    <img
+      src="/escudo-somos-enriko.jpg"
+      alt=""
+      className="escudo-intro"
+    />
+  </section>
+
+  <section className="bloque" id="explorar">
+    <div className="encabezado-bloque">
+      <div>
+        <p className="etiqueta">RECORRÉ EL GRUPO</p>
+        <h2>Explorá.</h2>
+        <p>
+          Los partidos, los números y las historias de Somos Enriko
+        </p>
+      </div>
+    </div>
+
+    <div className="accesos-grid">
+      <TarjetaSeccion
+        numero="01"
+        titulo="Calendario"
+        descripcion="Fechas, partidos y resultados"
+        onClick={irACalendario}
+      />
+
+      <TarjetaSeccion
+        numero="02"
+        titulo="Estadísticas"
+        descripcion="Puntos totales, jugadores y duplas"
+        onClick={irAEstadisticas}
+      />
+
+      <TarjetaSeccion
+        numero="03"
+        titulo="Mundial Personal 🌎"
+        descripcion="El camino individual hacia la gloria"
+        onClick={() => navegar('Mundial Personal 🌎')}
+      />
+
+      <TarjetaSeccion
+        numero="04"
+        titulo="Nosotros"
+        descripcion="Los Enrikos, sus historias e insignias"
+        onClick={() => navegar('Nosotros')}
+      />
+
+      <TarjetaSeccion
+        numero="05"
+        titulo="Pronosticador"
+        descripcion="Armá los equipos y consultá al Agorero"
+        onClick={() => navegar('Pronosticador')}
+      />
+
+      <TarjetaSeccion
+        numero="06"
+        titulo="El Muro Enriko"
+        descripcion="Declaraciones, recuerdos y pintadas"
+        onClick={() => navegar('El Muro Enriko')}
+      />
+    </div>
+  </section>
+
+  <section className="bloque portada-ranking" id="ranking-puntos">
+    <div className="encabezado-bloque">
+      <div>
+        <p className="etiqueta">EL PUNTAJE ACUMULADO</p>
+        <h2>Líderes</h2>
+        <p>¿Quién lidera la tabla general?</p>
+      </div>
+
+      <button className="enlace" onClick={irAEstadisticas}>
+        Ver tabla completa ↗
+      </button>
+    </div>
+
+    {errores.puntosJugadores ? (
+      <ErrorDatos mensaje={errores.puntosJugadores} />
+    ) : cargando ? (
+      <SinDatos>Cargando la tabla de puntos…</SinDatos>
+    ) : puntosJugadores.length === 0 ? (
+      <SinDatos>
+        Todavía no hay puntos para mostrar.
+      </SinDatos>
+    ) : (
+      <div className="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Jugador</th>
+              <th>PJ</th>
+              <th>Puntos</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {puntosJugadores.slice(0, 5).map((jugador, indice) => (
+              <tr key={jugador.nombre}>
+                <td className="puesto">{indice + 1}</td>
+                <td className="celda-nombre">{jugador.nombre}</td>
+                <td>{numero(jugador.pj)}</td>
+                <td className="dato-destacado">
+                  {numero(jugador.puntos)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </section>
+</>
+
         )
     }
   }

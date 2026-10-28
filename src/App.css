@@ -138,16 +138,20 @@ h3,
   letter-spacing: 1px;
 }
 
+
 .navegacion {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 5px;
+  flex-wrap: nowrap;
+  gap: 4px;
+  min-width: 0;
 }
 
 .navegacion button {
-  padding: 12px 14px;
+  flex: 0 1 auto;
+  padding: 10px 11px;
+  white-space: nowrap;
   background: transparent;
   border: 1px solid transparent;
   color: var(--gris);
@@ -156,6 +160,8 @@ h3,
   font-weight: 600;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
+
+
 
 .navegacion button:hover,
 .navegacion .nav-activo {
@@ -987,21 +993,24 @@ tbody tr:hover {
     width: calc(100% - 40px);
   }
 
-  .cabecera {
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 20px 0;
-    gap: 18px;
-  }
+  
+.cabecera {
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding: 20px 0;
+  gap: 16px;
+}
 
-  .navegacion {
-    width: 100%;
-    justify-content: flex-start;
-  }
+.navegacion {
+  width: 100%;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
 
-  .navegacion button {
-    padding: 10px;
-  }
+.navegacion button {
+  padding: 10px 12px;
+}
 
   .portada {
     margin: 0 -20px;
@@ -1067,15 +1076,24 @@ tbody tr:hover {
     line-height: 1.5;
   }
 
-  .navegacion {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  
+.navegacion {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  gap: 7px;
+}
 
-  .navegacion button {
-    text-align: left;
-    border-color: var(--borde-suave);
-  }
+.navegacion button {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 9px;
+  text-align: center;
+  white-space: normal;
+  border: 1px solid var(--borde-suave);
+  border-radius: 10px;
+  line-height: 1.35;
+}
 
   .portada {
     min-height: auto;
@@ -1402,6 +1420,21 @@ tbody tr:hover {
   margin-top: 0.35rem;
   line-height: 1.45;
 }
+
+.integrante-constructor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid rgba(190, 150, 255, 0.65);
+  border-radius: 999px;
+  background: rgba(135, 80, 220, 0.16);
+  color: #e5d3ff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
 .boton-orden-tabla {
   appearance: none;
   border: 0;
@@ -1423,4 +1456,579 @@ tbody tr:hover {
   outline: 2px solid currentColor;
   outline-offset: 3px;
   border-radius: 3px;
+}
+
+/* =========================================
+   SOMOS ENRIKO — VIOLETA ELEGANTE
+   Tarjetas, avatares e insignias
+   ========================================= */
+
+/* Grilla de integrantes */
+.integrantes-grid {
+  gap: 16px;
+}
+
+/* Tarjetas de jugadores */
+.integrante-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(190, 160, 235, 0.3);
+  background: linear-gradient(
+    145deg,
+    #1b1225 0%,
+    #140e1b 65%,
+    #110d17 100%
+  );
+  padding: 22px 18px;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.16);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+/* Movimiento sutil al pasar el cursor */
+@media (hover: hover) {
+  .integrante-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(190, 150, 255, 0.65);
+    box-shadow: 0 10px 28px rgba(83, 39, 125, 0.2);
+  }
+}
+
+/* Iniciales */
+.integrante-iniciales {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: linear-gradient(
+    145deg,
+    #8140b5,
+    #642b96
+  );
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(100, 43, 150, 0.2);
+}
+
+/* Nombre del jugador */
+.integrante-card h3 {
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+/* Texto de quién lo invitó */
+.integrante-ingreso {
+  color: #eee6f6;
+  line-height: 1.5;
+}
+
+/* Logros y etiquetas en formato píldora */
+.integrante-logro {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  max-width: 100%;
+  margin-top: 8px;
+  padding: 5px 10px;
+  border: 1px solid rgba(190, 160, 235, 0.25);
+  border-radius: 999px;
+  background: rgba(125, 76, 165, 0.15);
+  color: #e9d9ff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* Fundadores */
+.integrante-card .integrante-logro:first-of-type {
+  border-color: rgba(230, 202, 255, 0.4);
+}
+
+/* Principal constructor */
+.integrante-constructor {
+  border-color: rgba(190, 150, 255, 0.55);
+  background: linear-gradient(
+    135deg,
+    rgba(126, 67, 175, 0.28),
+    rgba(83, 47, 120, 0.2)
+  );
+  color: #f0e3ff;
+}
+
+/* Contenedor de insignias */
+.integrante-insignias {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+/* Insignias individuales */
+.integrante-insignia {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 1px solid rgba(190, 160, 235, 0.25);
+  border-radius: 12px;
+  background: rgba(125, 76, 165, 0.15);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: help;
+  transition:
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+@media (hover: hover) {
+  .integrante-insignia:hover {
+    transform: translateY(-2px);
+    background: rgba(125, 76, 165, 0.3);
+  }
+}
+
+/* Respeto por usuarios que prefieren menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .integrante-card,
+  .integrante-insignia {
+    transition: none;
+  }
+
+  .integrante-card:hover,
+  .integrante-insignia:hover {
+    transform: none;
+  }
+}
+
+/* =========================================
+   SOMOS ENRIKO — IDENTIDAD VISUAL GLOBAL
+   Portada, calendario y estadísticas
+   ========================================= */
+
+   :root {
+    --enriko-fondo: #110d17;
+    --enriko-superficie: #1b1225;
+    --enriko-superficie-hover: #241631;
+    --enriko-violeta: #8140b5;
+    --enriko-violeta-claro: #c9a5f2;
+    --enriko-borde: rgba(190, 160, 235, 0.28);
+    --enriko-texto: #f8f5fc;
+    --enriko-texto-suave: #c9bfd4;
+    --enriko-radio: 18px;
+  }
+  
+  /* ---------- PORTADA E INTRODUCCIÓN ---------- */
+  
+  .portada,
+  .comunidad-intro,
+  .introduccion-club {
+    border-radius: var(--enriko-radio);
+  }
+  
+  .portada-contenido {
+    border-radius: var(--enriko-radio);
+  }
+  
+  .escudo-portada,
+  .escudo-intro {
+    border-radius: 16px;
+  }
+  
+  .portada-marca {
+    color: var(--enriko-violeta-claro);
+  }
+  
+  .portada-textos,
+  .encabezado-bloque {
+    color: var(--enriko-texto);
+  }
+  
+  .portada-pie {
+    color: var(--enriko-texto-suave);
+  }
+  
+  /* Accesos a las secciones */
+  .accesos-grid {
+    gap: 16px;
+  }
+  
+  .acceso-card {
+    border: 1px solid var(--enriko-borde);
+    border-radius: var(--enriko-radio);
+    background: linear-gradient(
+      145deg,
+      var(--enriko-superficie),
+      var(--enriko-fondo)
+    );
+    color: var(--enriko-texto);
+    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.14);
+    transition:
+      transform 180ms ease,
+      border-color 180ms ease,
+      background 180ms ease,
+      box-shadow 180ms ease;
+  }
+  
+  @media (hover: hover) {
+    .acceso-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(190, 150, 255, 0.65);
+      background: var(--enriko-superficie-hover);
+      box-shadow: 0 10px 25px rgba(83, 39, 125, 0.18);
+    }
+  }
+  
+  /* Botones principales */
+  .boton-principal {
+    border-radius: 999px;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      filter 180ms ease;
+  }
+  
+  @media (hover: hover) {
+    .boton-principal:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(129, 64, 181, 0.24);
+      filter: brightness(1.08);
+    }
+  }
+  
+  /* ---------- CALENDARIO ---------- */
+  
+  .partidos-lista {
+    gap: 14px;
+  }
+  
+  .partido-card {
+    border: 1px solid var(--enriko-borde);
+    border-radius: var(--enriko-radio);
+    background: linear-gradient(
+      145deg,
+      var(--enriko-superficie),
+      var(--enriko-fondo)
+    );
+    color: var(--enriko-texto);
+    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.12);
+    transition:
+      border-color 180ms ease,
+      transform 180ms ease,
+      box-shadow 180ms ease;
+  }
+  
+  @media (hover: hover) {
+    .partido-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(190, 150, 255, 0.55);
+      box-shadow: 0 8px 22px rgba(83, 39, 125, 0.16);
+    }
+  }
+  
+  .partido-fecha {
+    color: var(--enriko-violeta-claro);
+  }
+  
+  .partido-info {
+    color: var(--enriko-texto-suave);
+  }
+  
+  .tipo-partido {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--enriko-borde);
+    border-radius: 999px;
+    padding: 4px 10px;
+    background: rgba(125, 76, 165, 0.15);
+    color: #e9d9ff;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  
+  .partido-resultado {
+    border-radius: 12px;
+    color: var(--enriko-texto);
+  }
+  
+  /* ---------- ESTADÍSTICAS ---------- */
+  
+  .seccion-estadisticas {
+    color: var(--enriko-texto);
+  }
+  
+  .titulo-tabla {
+    color: var(--enriko-texto);
+  }
+  
+  .mini-etiqueta,
+  .sello-tabla {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--enriko-borde);
+    border-radius: 999px;
+    padding: 4px 10px;
+    background: rgba(125, 76, 165, 0.15);
+    color: #e9d9ff;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  
+  .tabla-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--enriko-borde);
+    border-radius: var(--enriko-radio);
+    background: var(--enriko-superficie);
+    scrollbar-width: thin;
+    scrollbar-color: #71419a var(--enriko-fondo);
+  }
+  
+  /* Tablas: mantenemos su estructura y el desplazamiento horizontal */
+  .seccion-estadisticas table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  
+  .seccion-estadisticas th {
+    color: var(--enriko-violeta-claro);
+  }
+  
+  .seccion-estadisticas td {
+    color: var(--enriko-texto);
+  }
+  
+  .seccion-estadisticas th,
+  .seccion-estadisticas td {
+    border-bottom-color: var(--enriko-borde);
+  }
+  
+  .puesto {
+    color: var(--enriko-violeta-claro);
+    font-weight: 700;
+  }
+  
+  .celda-nombre {
+    color: var(--enriko-texto);
+    font-weight: 600;
+  }
+  
+  .dato-destacado {
+    color: #e4ccff;
+    font-weight: 700;
+  }
+  
+  .quimica {
+    border-radius: 999px;
+  }
+  
+  /* ---------- ACCESIBILIDAD ---------- */
+  
+  .boton-principal:focus-visible,
+  .acceso-card:focus-visible {
+    outline: 2px solid var(--enriko-violeta-claro);
+    outline-offset: 3px;
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .acceso-card,
+    .boton-principal,
+    .partido-card {
+      transition: none;
+    }
+  
+    .acceso-card:hover,
+    .boton-principal:hover,
+    .partido-card:hover {
+      transform: none;
+    }
+  }
+
+/* Mundial Personal dentro de cada tarjeta */
+.integrante-mundial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 8px;
+  border: 1px solid rgba(190, 160, 235, 0.22);
+  border-radius: 14px;
+  background: rgba(125, 76, 165, 0.09);
+}
+
+.integrante-mundial-titulo {
+  margin: 0;
+  color: #c9a5f2;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.integrante-mundial-estado {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 11px;
+  border: 1px solid rgba(190, 160, 235, 0.3);
+  border-radius: 999px;
+  background: rgba(125, 76, 165, 0.16);
+  color: #f0e5ff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.integrante-mundial-estado.es-campeon {
+  border-color: rgba(244, 206, 120, 0.5);
+  background: rgba(244, 206, 120, 0.12);
+  color: #f4ce78;
+}
+  
+/* Portada alfa: acciones principales */
+.portada-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.boton-secundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 17px;
+  border: 1px solid rgba(201, 165, 242, 0.5);
+  border-radius: 999px;
+  background: rgba(125, 76, 165, 0.12);
+  color: #f4eaff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.boton-secundario:hover {
+  background: rgba(125, 76, 165, 0.26);
+  border-color: #c9a5f2;
+}
+
+.boton-secundario:focus-visible {
+  outline: 2px solid #c9a5f2;
+  outline-offset: 3px;
+}
+
+/* El destino de Explorar no queda tapado por la navegación */
+#explorar {
+  scroll-margin-top: 24px;
+}
+
+/* La grilla de accesos respira un poco más */
+#explorar .accesos-grid {
+  gap: 16px;
+}
+
+#explorar .acceso-card {
+  min-height: 130px;
+  border-radius: 18px;
+}
+
+/* Ranking de puntos de la portada */
+.portada-ranking .tabla-scroll {
+  border-radius: 18px;
+}
+
+.portada-ranking table {
+  width: 100%;
+}
+
+.portada-ranking .dato-destacado {
+  font-weight: 800;
+}
+
+@media (max-width: 600px) {
+  .portada-acciones {
+    width: 100%;
+  }
+
+  .portada-acciones button {
+    width: 100%;
+  }
+
+  .portada-ranking .encabezado-bloque {
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+.mundial-diego {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  margin: 22px 0 30px;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(201, 165, 242, 0.28);
+  border-radius: 20px;
+  background: linear-gradient(
+    120deg,
+    rgba(91, 49, 130, 0.3),
+    rgba(20, 16, 27, 0.94)
+  );
+}
+
+.mundial-diego-imagen {
+  display: block;
+  flex: 0 0 auto;
+  width: 100px;
+  max-height: 145px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 14px rgba(201, 165, 242, 0.22));
+}
+
+.mundial-diego-texto {
+  min-width: 0;
+}
+
+.mundial-diego-etiqueta {
+  color: #c9a5f2;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.mundial-diego-texto p {
+  margin: 8px 0 0;
+  color: #fff;
+  font-size: clamp(1rem, 2.4vw, 1.35rem);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+@media (max-width: 480px) {
+  .mundial-diego {
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .mundial-diego-imagen {
+    width: 75px;
+    max-height: 115px;
+  }
+
+  .mundial-diego-etiqueta {
+    font-size: 0.65rem;
+  }
 }
