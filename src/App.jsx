@@ -9,6 +9,7 @@ const SECCIONES = [
   'Calendario',
   'Estadísticas',
   'Mundial Personal 🌎',
+  'El Muro Enriko',
   'Pronosticador',
   'Nosotros',
 ]
@@ -73,12 +74,32 @@ function App() {
   const [seccion, setSeccion] = useState('¿Quiénes somos?')
 
   const [ranking, setRanking] = useState([])
+  const [puntosJugadores, setPuntosJugadores] = useState([])
   const [duplas, setDuplas] = useState([])
   const [partidos, setPartidos] = useState([])
+  const [resumenPartidos, setResumenPartidos] = useState(null)
   const [jugadores, setJugadores] = useState([])
   const [mundial, setMundial] = useState([])
+  const [ordenRanking, setOrdenRanking] = useState({
+    columna: 'diferencia_gol',
+    direccion: 'desc',
+  })
+  
+  const [ordenDuplas, setOrdenDuplas] = useState({
+    columna: 'indice_quimica',
+    direccion: 'desc',
+  })
 const [cargandoMundial, setCargandoMundial] = useState(true)
 const [errorMundial, setErrorMundial] = useState(null)
+
+const [mensajesMuro, setMensajesMuro] = useState([])
+const [cargandoMuro, setCargandoMuro] = useState(true)
+const [errorMuro, setErrorMuro] = useState(null)
+const [nombreMuro, setNombreMuro] = useState('')
+const [textoMuro, setTextoMuro] = useState('')
+const [categoriaMuro, setCategoriaMuro] = useState('Libre')
+const [publicandoMuro, setPublicandoMuro] = useState(false)
+const [avisoMuro, setAvisoMuro] = useState('')
 
   const [cargando, setCargando] = useState(true)
   const [errores, setErrores] = useState({})
@@ -91,13 +112,26 @@ const [errorMundial, setErrorMundial] = useState(null)
 
       const resultados = await Promise.all([
         supabase
+          .from('resumen_partidos')
+         .select('*')
+         .single(),
+        
+        supabase
           .from('ranking_completo')
           .select('*')
           .order('porcentaje_victorias', {
             ascending: false,
             nullsFirst: false,
           }),
-
+          supabase
+          .from('puntos_jugadores')
+          .select('*')
+          .order('puntos', {
+            ascending: false,
+          })
+          .order('promedio_puntos', {
+            ascending: false,
+          }),
         supabase
           .from('ranking_duplas')
           .select('*')
@@ -121,24 +155,28 @@ const [errorMundial, setErrorMundial] = useState(null)
       if (!activo) return
 
       const nombres = [
+        'resumenPartidos',
         'ranking',
+        'puntosJugadores',
         'duplas',
         'partidos',
         'jugadores',
       ]
-
+      
       const nuevosErrores = {}
-
+      
       resultados.forEach((resultado, indice) => {
         if (resultado.error) {
           nuevosErrores[nombres[indice]] = resultado.error.message
         }
       })
-
-      setRanking(resultados[0].data || [])
-      setDuplas(resultados[1].data || [])
-      setPartidos(resultados[2].data || [])
-      setJugadores(resultados[3].data || [])
+      
+      setResumenPartidos(resultados[0].data || null)
+      setRanking(resultados[1].data || [])
+      setPuntosJugadores(resultados[2].data || [])
+      setDuplas(resultados[3].data || [])
+      setPartidos(resultados[4].data || [])
+      setJugadores(resultados[5].data || [])
       setErrores(nuevosErrores)
       setCargando(false)
     }
@@ -178,6 +216,78 @@ const [errorMundial, setErrorMundial] = useState(null)
       activo = false
     }
   }, [])
+  
+  
+  useEffect(() => {
+    let activo = true
+
+    async function cargarMensajesMuro() {
+      setCargandoMuro(true)
+      setErrorMuro(null)
+
+      const { data, error } = await supabase
+        .from('mensajes_muro')
+        .select('id, nombre, mensaje, categoria, created_at')
+        .order('created_at', { ascending: false })
+
+      if (!activo) return
+
+      if (error) {
+        setErrorMuro(error.message)
+        setMensajesMuro([])
+      } else {
+        setMensajesMuro(data || [])
+      }
+
+      setCargandoMuro(false)
+    }
+
+    cargarMensajesMuro()
+
+    return () => {
+      activo = false
+    }
+  }, [])
+
+  
+  async function publicarMensajeMuro(evento) {
+    evento.preventDefault()
+    setAvisoMuro('')
+
+    const nombre = nombreMuro.trim()
+    const mensaje = textoMuro.trim()
+
+    if (!nombre || !mensaje) {
+      setAvisoMuro('Completá tu nombre y tu mensaje.')
+      return
+    }
+
+    setPublicandoMuro(true)
+
+    const { data, error } = await supabase
+      .from('mensajes_muro')
+      .insert({
+        nombre,
+        mensaje,
+        categoria: categoriaMuro,
+      })
+      .select('id, nombre, mensaje, categoria, created_at')
+      .single()
+
+    setPublicandoMuro(false)
+
+    if (error) {
+      setAvisoMuro(`No se pudo publicar: ${error.message}`)
+      return
+    }
+
+    setMensajesMuro((actuales) => [data, ...actuales])
+    setNombreMuro('')
+    setTextoMuro('')
+    setCategoriaMuro('Libre')
+    setAvisoMuro('¡Pintada publicada! 💜')
+  }
+
   function navegar(destino) {
     setSeccion(destino)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -196,64 +306,254 @@ const [errorMundial, setErrorMundial] = useState(null)
     return <ErrorDatos mensaje={errores[clave]} />
   }
 
-  function renderRankingIndividual(limite = ranking.length) {
-    if (errores.ranking) {
-      return renderError('ranking')
-    }
+  
+function renderRankingIndividual(limite = ranking.length) {
+  if (errores.ranking) {
+    return renderError('ranking')
+  }
 
-    if (cargando) {
-      return <SinDatos>Cargando estadísticas…</SinDatos>
-    }
+  if (cargando) {
+    return <SinDatos>Cargando estadísticas…</SinDatos>
+  }
 
-    if (!ranking.length) {
-      return (
-        <SinDatos>
-          Todavía no hay jugadores con estadísticas disponibles en el ranking.
-        </SinDatos>
-      )
-    }
-
+  if (!ranking.length) {
     return (
-      <div className="tabla-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Jugador</th>
-              <th>PJ</th>
-              <th>PG</th>
-              <th>PE</th>
-              <th>PP</th>
-              <th>% victorias</th>
-              <th>Dif. de gol</th>
-              <th>Dif. promedio</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {ranking.slice(0, limite).map((jugador, indice) => (
-              <tr key={jugador.jugador_id ?? jugador.id ?? jugador.nombre}>
-                <td className="puesto">{indice + 1}</td>
-                <td className="celda-nombre">
-                  {jugador.nombre ?? 'Jugador'}
-                </td>
-                <td>{numero(jugador.pj)}</td>
-                <td>{numero(jugador.pg)}</td>
-                <td>{numero(jugador.pe)}</td>
-                <td>{numero(jugador.pp)}</td>
-                <td className="dato-destacado">
-                  {numero(jugador.porcentaje_victorias, 1)}%
-                </td>
-                <td>{numero(jugador.diferencia_gol)}</td>
-                <td>{numero(jugador.diferencia_gol_promedio, 2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <SinDatos>
+        Todavía no hay jugadores con estadísticas disponibles en el ranking.
+      </SinDatos>
     )
   }
 
+  const rankingOrdenado = ordenarFilas(
+    ranking,
+    ordenRanking,
+    (a, b) => Number(b.pj ?? 0) - Number(a.pj ?? 0)
+  )
+
+  const columnas = [
+    { clave: 'nombre', titulo: 'Jugador', tipo: 'texto' },
+    { clave: 'pj', titulo: 'PJ' },
+    { clave: 'pg', titulo: 'PG' },
+    { clave: 'pe', titulo: 'PE' },
+    { clave: 'pp', titulo: 'PP' },
+    {
+      clave: 'porcentaje_victorias',
+      titulo: '% victorias',
+      formato: (j) => `${numero(j.porcentaje_victorias, 1)}%`,
+    },
+    { clave: 'diferencia_gol', titulo: 'Dif. de gol' },
+    {
+      clave: 'diferencia_gol_promedio',
+      titulo: 'Dif. promedio',
+      formato: (j) => numero(j.diferencia_gol_promedio, 2),
+    },
+    {
+      clave: 'rating',
+      titulo: 'Rating',
+      formato: (j) => numero(j.rating, 2),
+    },
+    {
+      clave: 'Mundial Personal 🌎',
+      titulo: 'Mundial Personal 🌎',
+      tipo: 'texto',
+      formato: (j) => j['Mundial Personal 🌎'] ?? '—',
+    },
+  ]
+
+  return (
+    <div className="tabla-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            {columnas.map((columna) => (
+              <th key={columna.clave}>
+                <button
+                  type="button"
+                  className="boton-orden-tabla"
+                  onClick={() =>
+                    cambiarOrden(
+                      ordenRanking,
+                      setOrdenRanking,
+                      columna.clave
+                    )
+                  }
+                >
+                  {columna.titulo}
+                  {ordenRanking.columna === columna.clave
+                    ? ordenRanking.direccion === 'desc'
+                      ? ' ↓'
+                      : ' ↑'
+                    : ''}
+                </button>
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {rankingOrdenado.slice(0, limite).map((jugador, indice) => (
+            <tr
+              key={
+                jugador.jugador_id ??
+                jugador.id ??
+                jugador.nombre
+              }
+            >
+              <td className="puesto">{indice + 1}</td>
+
+              {columnas.map((columna) => (
+                <td
+                  key={columna.clave}
+                  className={
+                    columna.clave === 'nombre'
+                      ? 'celda-nombre'
+                      : columna.clave === 'porcentaje_victorias'
+                        ? 'dato-destacado'
+                        : ''
+                  }
+                >
+                  {columna.formato
+                    ? columna.formato(jugador)
+                    : columna.tipo === 'texto'
+                      ? jugador[columna.clave] ?? '—'
+                      : numero(jugador[columna.clave])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      
+        </table>
+
+<div className="criterios-tabla">
+  <strong>¿Cómo se calcula el rating?</strong>
+  <p>
+    El rating combina dos factores: el porcentaje de victorias y
+    la diferencia de gol promedio por partido. Ganar más seguido
+    y obtener mejores diferencias de gol contribuye a elevarlo.
+  </p>
+  <p>
+    Para que una muestra pequeña de partidos no pese demasiado,
+    el cálculo ajusta el rating hacia el promedio general de los
+    jugadores. Cuantos más partidos disputás, mayor es la influencia
+    de tu propio rendimiento.
+  </p>
+  <p>
+    <strong>Importante:</strong> es un indicador estadístico
+    comparativo, no una predicción exacta de cómo vas a jugar
+    en el próximo partido. Se consideran únicamente partidos oficiales.
+  </p>
+</div>
+</div>
+)
+}
+
+
+function renderTablaPuntos() {
+  if (errores.puntosJugadores) {
+    return (
+      <SinDatos>
+        No se pudieron cargar los puntos: {errores.puntosJugadores}
+      </SinDatos>
+    )
+  }
+
+  if (cargando) {
+    return <SinDatos>Cargando tabla de puntos…</SinDatos>
+  }
+
+  if (!puntosJugadores.length) {
+    return <SinDatos>Todavía no hay puntos para mostrar.</SinDatos>
+  }
+
+  return (
+    <div className="tabla-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Jugador</th>
+            <th>PJ</th>
+            <th>PG</th>
+            <th>PE</th>
+            <th>PP</th>
+            <th>Puntos</th>
+            <th>Promedio</th>
+          </tr>
+        </thead>
+        <tbody>
+          {puntosJugadores.map((jugador, indice) => (
+            <tr key={jugador.nombre}>
+              <td className="puesto">{indice + 1}</td>
+              <td className="celda-nombre">{jugador.nombre}</td>
+              <td>{numero(jugador.pj)}</td>
+              <td>{numero(jugador.pg)}</td>
+              <td>{numero(jugador.pe)}</td>
+              <td>{numero(jugador.pp)}</td>
+              <td className="dato-destacado">
+                {numero(jugador.puntos)}
+              </td>
+              <td>{numero(jugador.promedio_puntos, 2)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="criterios-tabla">
+        <strong>¿Cómo se puntúa?</strong>
+        <p>
+          Victoria: 4 puntos · Empate: 2 puntos · Derrota: 1 punto.
+        </p>
+        <p>
+          El promedio se calcula dividiendo los puntos acumulados
+          por los partidos jugados. Se consideran los partidos oficiales
+          de todo el historial.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+  function ordenarFilas(filas, orden, desempate = null) {
+    return [...filas].sort((a, b) => {
+      const valorA = a[orden.columna]
+      const valorB = b[orden.columna]
+  
+      let comparacion = 0
+  
+      if (valorA == null && valorB != null) return 1
+      if (valorA != null && valorB == null) return -1
+  
+      if (typeof valorA === 'string' && typeof valorB === 'string') {
+        comparacion = valorA.localeCompare(valorB, 'es')
+      } else {
+        comparacion = Number(valorA ?? 0) - Number(valorB ?? 0)
+      }
+  
+      if (comparacion !== 0) {
+        return orden.direccion === 'asc'
+          ? comparacion
+          : -comparacion
+      }
+  
+      if (desempate) {
+        return desempate(b, a)
+      }
+  
+      return 0
+    })
+  }
+  
+  function cambiarOrden(orden, setOrden, columna) {
+    setOrden((actual) => ({
+      columna,
+      direccion:
+        actual.columna === columna && actual.direccion === 'desc'
+          ? 'asc'
+          : 'desc',
+    }))
+  }
   function renderRankingDuplas(limite = duplas.length) {
     if (errores.duplas) {
       return renderError('duplas')
@@ -284,6 +584,7 @@ const [errorMundial, setErrorMundial] = useState(null)
               <th>Dif. de gol</th>
               <th>Dif. promedio</th>
               <th>Índice de química</th>
+              <th>Índice de sinergia</th>
             </tr>
           </thead>
 
@@ -320,18 +621,48 @@ const [errorMundial, setErrorMundial] = useState(null)
                   </td>
                   <td>{numero(dupla.diferencia_gol_juntos)}</td>
                   <td>{numero(dupla.diferencia_gol_promedio, 2)}</td>
+                  
                   <td className="quimica">
-                    {numero(dupla.indice_quimica, 1)}
+                 {numero(dupla.indice_quimica, 2)}
+                </td>
+                  <td className="quimica">
+                  {numero(dupla.indice_sinergia, 2)}
                   </td>
+
                 </tr>
               )
             })}
           </tbody>
-        </table>
-      </div>
-    )
-  }
+        
+          </table>
 
+<div className="criterios-tabla">
+  <strong>¿Cómo se evalúan las duplas?</strong>
+  <p>
+    <strong>Índice de química:</strong> combina el porcentaje
+    de victorias compartidas con la cantidad de partidos jugados
+    juntos. Una dupla que gana con frecuencia y tiene más partidos
+    en común obtiene un índice mayor.
+  </p>
+  <p>
+    <strong>Índice de sinergia:</strong> parte del índice de química
+    y suma la diferencia de gol promedio de la dupla, multiplicada
+    por 5. Así incorpora no solo cuántas veces gana, sino también
+    por cuánto suele ganar o perder.
+  </p>
+  <p>
+    Ambos indicadores se calculan con partidos oficiales.
+    Son referencias estadísticas: no garantizan que una dupla
+    vaya a repetir esos resultados en el próximo partido.
+  </p>
+</div>
+</div>
+)
+}
+
+
+
+  
   function renderCalendario() {
     if (errores.partidos) return renderError('partidos')
 
@@ -551,7 +882,7 @@ const [errorMundial, setErrorMundial] = useState(null)
       case 'Mundial Personal 🌎':
   return (
     <section className="pagina interior">
-      <p className="etiqueta">LA GLORIA ES PERSONAL</p>
+      <p className="etiqueta">LA GLORIA PERSONAL</p>
       <h1>Mundial Personal<span>🌎</span></h1>
       <p className="bajada">
         Una copa para dominarlos a todos (?)
@@ -559,7 +890,9 @@ const [errorMundial, setErrorMundial] = useState(null)
 
       {renderMundialPersonal()}
     </section>
-  )case 'Calendario':
+  )
+  
+  case 'Calendario':
         return (
           <section className="pagina interior">
             <p className="etiqueta">PARTIDOS Y EVENTOS ENRIKENSES</p>
@@ -581,6 +914,18 @@ const [errorMundial, setErrorMundial] = useState(null)
 El registro de los partidos oficiales, los rendimientos
 individuales y la química entre compañeros
 </p>
+
+<div className="seccion-estadisticas">
+  <div className="titulo-tabla">
+    <div>
+      <span className="mini-etiqueta">PUNTAJE ACUMULADO</span>
+      <h2>Tabla general de puntos</h2>
+    </div>
+    <span className="sello-tabla">OFICIAL</span>
+  </div>
+
+  {renderTablaPuntos()}
+</div>
 
 <div className="seccion-estadisticas">
 <div className="titulo-tabla">
@@ -607,6 +952,126 @@ individuales y la química entre compañeros
 </div>
 </section>
         )
+        
+      
+        case 'El Muro Enriko':
+          return (
+            <section className="pagina interior muro-pagina">
+              <p className="etiqueta">LA PARED ES DE TODOS</p>
+              <h1>El Muro Enriko<span> ✍️</span></h1>
+              <p className="bajada">
+                Declaraciones, recuerdos, cargadas y manifiestos.
+                Lo que pasa en la cancha también se escribe.
+              </p>
+  
+              <div className="muro-contenido">
+                <div className="muro-presentacion">
+                  <span className="muro-sello">MURO OFICIAL ENRIKENSE</span>
+                  <h2>Dejá tu marca.</h2>
+                  <p>
+                    Una pared, infinitas historias. Escribí algo que
+                    merezca quedar en la memoria del club.
+                  </p>
+                </div>
+  
+                <form className="muro-formulario" onSubmit={publicarMensajeMuro}>
+                  <h2>Tu pintada</h2>
+  
+                  <label htmlFor="nombre-muro">Nombre o apodo</label>
+                  <input
+                    id="nombre-muro"
+                    type="text"
+                    value={nombreMuro}
+                    onChange={(evento) => setNombreMuro(evento.target.value)}
+                    placeholder="¿Quién deja su marca?"
+                    maxLength={40}
+                    required
+                  />
+  
+                  <label htmlFor="categoria-muro">Tipo de pintada</label>
+                  <select
+                    id="categoria-muro"
+                    value={categoriaMuro}
+                    onChange={(evento) => setCategoriaMuro(evento.target.value)}
+                  >
+                    <option value="Libre">Libre</option>
+                    <option value="Cancha">Cancha</option>
+                    <option value="Humor">Humor</option>
+                    <option value="Recuerdos">Recuerdos</option>
+                    <option value="Declaraciones">Declaraciones</option>
+                    <option value="Feedback">Feedback</option>
+                  </select>
+  
+                  <label htmlFor="mensaje-muro">Tu mensaje</label>
+                  <textarea
+                    id="mensaje-muro"
+                    value={textoMuro}
+                    onChange={(evento) => setTextoMuro(evento.target.value)}
+                    placeholder="La historia te está esperando..."
+                    maxLength={500}
+                    rows={5}
+                    required
+                  />
+  
+                  <div className="muro-formulario-pie">
+                    <span>{textoMuro.length}/500</span>
+                    <button
+                      type="submit"
+                      className="boton-principal"
+                      disabled={publicandoMuro}
+                    >
+                      {publicandoMuro ? 'Pintando…' : 'Dejar mi marca ✍️'}
+                    </button>
+                  </div>
+  
+                  {avisoMuro && (
+                    <p role="status" className="muro-aviso">
+                      {avisoMuro}
+                    </p>
+                  )}
+                </form>
+  
+                <div className="muro-listado">
+                  <div className="muro-listado-cabecera">
+                    <span className="mini-etiqueta">LAS VOCES DEL CLUB</span>
+                    <h2>Lo que quedó escrito</h2>
+                  </div>
+  
+                  {cargandoMuro ? (
+                    <p className="muro-vacio">Leyendo la pared…</p>
+                  ) : errorMuro ? (
+                    <p className="muro-vacio">
+                      No pudimos cargar los mensajes: {errorMuro}
+                    </p>
+                  ) : mensajesMuro.length === 0 ? (
+                    <p className="muro-vacio">
+                      La pared todavía está en blanco. ¿Quién se anima a
+                      inaugurarla?
+                    </p>
+                  ) : (
+                    <div className="muro-mensajes">
+                      {mensajesMuro.map((mensaje) => (
+                        <article className="muro-mensaje" key={mensaje.id}>
+                          <div className="muro-mensaje-cabecera">
+                            <strong>{mensaje.nombre}</strong>
+                            <span>{mensaje.categoria}</span>
+                          </div>
+                          <p>{mensaje.mensaje}</p>
+                          <time dateTime={mensaje.created_at}>
+                            {new Date(mensaje.created_at).toLocaleString('es-AR', {
+                              dateStyle: 'medium',
+                              timeStyle: 'short',
+                            })}
+                          </time>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )
+  
         case 'Pronosticador':
           return (
             <section className="pagina interior">
