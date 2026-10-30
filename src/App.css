@@ -2032,3 +2032,162 @@ tbody tr:hover {
     font-size: 0.65rem;
   }
 }
+
+
+.partido-equipos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.partido-equipo {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.partido-equipo strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+
+.partido-equipo p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.equipo-claros {
+  background: #f4efff;
+  border-top: 3px solid #c9b0f0;
+  color: #302044;
+}
+
+.equipo-claros p {
+  color: #45345c;
+}
+
+.equipo-oscuros {
+  background: #17151b;
+  border-top: 3px solid #55505e;
+  color: #fff;
+}
+
+.equipo-oscuros p {
+  color: #e8e4ed;
+}
+
+.partido-equipo .sin-jugadores {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.boton-premios {
+  display: block;
+  margin-top: 12px;
+  padding: 9px 16px;
+  color: #291b3b;
+  background: #eee4ff;
+  border: 1px solid #c9adee;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.boton-premios:hover {
+  background: #d9c2fa;
+  transform: translateY(-1px);
+}
+
+.partido-premiados {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-left: 3px solid #a77bd5;
+  border-radius: 5px;
+  background: rgba(167, 123, 213, 0.09);
+}
+
+.partido-premiados p {
+  margin: 4px 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: #e9e0f2;
+}
+
+.partido-premiados span + span::before {
+  content: ' · ';
+}
+
+@media (max-width: 600px) {
+  .partido-equipos {
+    grid-template-columns: 1fr;
+  }
+}
+.partido-marcador {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  margin: 20px 0;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+}
+
+.marcador-equipo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 90px;
+}
+
+.marcador-equipo > span {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.marcador-equipo strong {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.8rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.marcador-equipo small {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  opacity: 0.6;
+}
+
+.marcador-claros > span {
+  color: #c9a8ff;
+}
+
+.marcador-oscuros > span {
+  color: #d0d0d0;
+}
+
+.marcador-separador {
+  font-size: 2rem;
+  font-weight: 300;
+  opacity: 0.4;
+}
+
+@media (max-width: 480px) {
+  .partido-marcador {
+    gap: 14px;
+    padding: 14px 8px;
+  }
+
+  .marcador-equipo strong {
+    font-size: 2.3rem;
+  }
+}

@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
 import './App.css'
 import TeamSelector from './TeamSelector'
-
+import Votacion from './Votacion'
 
 
 const SECCIONES = [
   '¿Quiénes somos?',
-  'Calendario',
+  'Historial',
   'Estadísticas',
   'Mundial Personal 🌎',
   'El Muro Enriko',
-  'Pronosticador',
+  'Próximo sábado',
   'Nosotros',
 ]
 
@@ -74,7 +74,9 @@ function TarjetaSeccion({ numero, titulo, descripcion, onClick }) {
 
 function App() {
   const [seccion, setSeccion] = useState('¿Quiénes somos?')
-
+  const partidoParaVotar = new URLSearchParams(
+    window.location.search
+  ).get('votar')
   const [ranking, setRanking] = useState([])
   const [puntosJugadores, setPuntosJugadores] = useState([])
   const [arbolJugadores, setArbolJugadores] = useState([])
@@ -82,6 +84,7 @@ function App() {
   const [duplas, setDuplas] = useState([])
   const [partidos, setPartidos] = useState([])
   const [resumenPartidos, setResumenPartidos] = useState(null)
+  const [detallesVotacion, setDetallesVotacion] = useState({})
   const [jugadores, setJugadores] = useState([])
   const [mundial, setMundial] = useState([])
   const [ordenRanking, setOrdenRanking] = useState({
@@ -114,7 +117,6 @@ const [avisoMuro, setAvisoMuro] = useState('')
     async function cargarDatos() {
       setCargando(true)
 
-      
 const resultados = await Promise.all([
   supabase
     .from('resumen_partidos')
@@ -144,9 +146,15 @@ const resultados = await Promise.all([
     })
     .limit(20),
 
-  supabase
+    supabase
     .from('partidos')
-    .select('*')
+    .select(`
+      *,
+      participaciones (
+        equipo,
+        jugadores (nombre)
+      )
+    `)
     .order('fecha', { ascending: false }),
 
   supabase
@@ -204,6 +212,42 @@ const resultados = await Promise.all([
       activo = false
     }
   }, [])
+  useEffect(() => {
+    let activo = true
+  
+    async function cargarDetallesVotacion() {
+      if (!partidos.length) return
+  
+      const resultados = await Promise.all(
+        partidos.map(async (partido) => {
+          const { data, error } = await supabase.rpc(
+            'obtener_detalle_votacion',
+            { p_partido_id: partido.id }
+          )
+  
+          if (error) {
+            console.error(
+              `Error al cargar votación del partido ${partido.id}:`,
+              error.message
+            )
+            return [partido.id, null]
+          }
+  
+          return [partido.id, data]
+        })
+      )
+  
+      if (!activo) return
+  
+      setDetallesVotacion(Object.fromEntries(resultados))
+    }
+  
+    cargarDetallesVotacion()
+  
+    return () => {
+      activo = false
+    }
+  }, [partidos])
   useEffect(() => {
     let activo = true
   
@@ -315,7 +359,7 @@ const resultados = await Promise.all([
   }
 
   function irACalendario() {
-    navegar('Calendario')
+    navegar('Historial')
   }
 
   function irAExplorar() {
@@ -687,65 +731,180 @@ function renderTablaPuntos() {
 
 
   
-  function renderCalendario() {
-    if (errores.partidos) return renderError('partidos')
+  
+function renderCalendario() {
+  if (errores.partidos) return renderError('partidos')
 
-    if (cargando) {
-      return <SinDatos>Cargando partidos…</SinDatos>
-    }
+  if (cargando) {
+    return <SinDatos>Cargando historial…</SinDatos>
+  }
 
-    if (!partidos.length) {
-      return (
-        <SinDatos>
-          Todavía no hay partidos registrados en el calendario.
-        </SinDatos>
-      )
-    }
-
+  if (!partidos.length) {
     return (
-      <div className="partidos-lista">
-        {partidos.map((partido) => {
-          const claros = partido.goles_claros
-          const oscuros = partido.goles_oscuros
-          const tieneResultado =
-            claros !== null &&
-            claros !== undefined &&
-            oscuros !== null &&
-            oscuros !== undefined
-
-          return (
-            <article className="partido-card" key={partido.id}>
-              <div className="partido-fecha">
-                <span className="mini-etiqueta">FECHA</span>
-                <strong>{formatearFecha(partido.fecha)}</strong>
-              </div>
-
-              <div className="partido-info">
-                <span className="tipo-partido">
-                  {partido.tipo_partido || 'Partido'}
-                </span>
-                <h3>Claros <span>vs.</span> Oscuros</h3>
-                {partido.observaciones && (
-                  <p>{partido.observaciones}</p>
-                )}
-              </div>
-
-              <div className="partido-resultado">
-                {tieneResultado ? (
-                  <>
-                    <strong>{claros} <span>–</span> {oscuros}</strong>
-                    <small>Resultado final</small>
-                  </>
-                ) : (
-                  <span className="sin-resultado">Sin resultado</span>
-                )}
-              </div>
-            </article>
-          )
-        })}
-      </div>
+      <SinDatos>
+        Todavía no hay partidos registrados en el historial.
+      </SinDatos>
     )
   }
+
+  return (
+    <div className="partidos-lista">
+      {partidos.map((partido) => {
+        const claros = partido.goles_claros
+        const oscuros = partido.goles_oscuros
+
+        const tieneResultado =
+          claros !== null &&
+          claros !== undefined &&
+          oscuros !== null &&
+          oscuros !== undefined
+
+        const participaciones = partido.participaciones || []
+
+        const jugadoresClaros = participaciones
+          .filter((p) => p.equipo === 'Claros')
+          .map((p) => p.jugadores?.nombre)
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, 'es'))
+
+        const jugadoresOscuros = participaciones
+          .filter((p) => p.equipo === 'Oscuros')
+          .map((p) => p.jugadores?.nombre)
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, 'es'))
+          const detalleVotacion = detallesVotacion[partido.id]
+
+          const premioTono = detalleVotacion?.premio_tono || []
+          const golesFecha = detalleVotacion?.goles_fecha || []
+          
+          const maxVotosTono = Math.max(
+            0,
+            ...premioTono.map((item) => Number(item.votos || 0))
+          )
+          
+          const maxVotosGol = Math.max(
+            0,
+            ...golesFecha.map((item) => Number(item.votos || 0))
+          )
+          
+          const ganadoresTono = premioTono.filter(
+            (item) => Number(item.votos || 0) === maxVotosTono && maxVotosTono > 0
+          )
+          
+          const ganadoresGol = golesFecha.filter(
+            (item) => Number(item.votos || 0) === maxVotosGol && maxVotosGol > 0
+          )
+          
+          const votacionAbierta = detalleVotacion?.estado === 'abierta'
+        return (
+          <article className="partido-card" key={partido.id}>
+            <div className="partido-fecha">
+              <span className="mini-etiqueta">FECHA</span>
+              <strong>{formatearFecha(partido.fecha)}</strong>
+            </div>
+
+            <div className="partido-info">
+              <span className="tipo-partido">
+                {partido.tipo_partido || 'Partido'}
+              </span>
+
+              <div className="partido-marcador">
+  {tieneResultado ? (
+    <>
+      <div className="marcador-equipo marcador-claros">
+        <span>◇ CLAROS</span>
+        <strong>{claros}</strong>
+        <small>GOLES</small>
+      </div>
+
+      <span className="marcador-separador">—</span>
+
+      <div className="marcador-equipo marcador-oscuros">
+        <span>⚫ OSCUROS</span>
+        <strong>{oscuros}</strong>
+        <small>GOLES</small>
+      </div>
+    </>
+  ) : (
+    <h3>Claros <span>vs.</span> Oscuros</h3>
+  )}
+</div>
+
+              <div className="partido-equipos">
+                <div className="partido-equipo equipo-claros">
+                <strong>◇ Claros</strong>
+                  {jugadoresClaros.length > 0 ? (
+                    <p>{jugadoresClaros.join(' · ')}</p>
+                  ) : (
+                    <p className="sin-jugadores">Sin jugadores registrados</p>
+                  )}
+                </div>
+
+                <div className="partido-equipo equipo-oscuros">
+                  <strong>⚫ Oscuros</strong>
+                  {jugadoresOscuros.length > 0 ? (
+                    <p>{jugadoresOscuros.join(' · ')}</p>
+                  ) : (
+                    <p className="sin-jugadores">Sin jugadores registrados</p>
+                  )}
+                </div>
+              </div>
+
+              {partido.observaciones && (
+                <p>{partido.observaciones}</p>
+              )}
+            </div>
+
+            <div className="partido-resultado">
+  {!tieneResultado && (
+    <span className="sin-resultado">Sin resultado</span>
+  )}
+
+  {detalleVotacion?.estado === 'abierta' && (
+    <button
+      type="button"
+      className="boton-premios"
+      onClick={() => {
+        window.location.href =
+          `${window.location.pathname}?votar=${partido.id}`
+      }}
+    >
+      ¡Votá! 🏆
+    </button>
+  )}
+
+  {detalleVotacion?.estado === 'cerrada' && (
+    <div className="partido-premiados">
+      {ganadoresTono.length > 0 && (
+        <p>
+          🏅 <strong>Premio Toño:</strong>{' '}
+          {ganadoresTono.map((item) => (
+            <span key={item.jugador_id}>
+              {item.nombre} ({item.votos})
+            </span>
+          ))}
+        </p>
+      )}
+
+      {ganadoresGol.length > 0 && (
+        <p>
+          ⚽ <strong>Mejor gol:</strong>{' '}
+          {ganadoresGol.map((item) => (
+            <span key={item.gol_id}>
+              {item.descripcion} ({item.votos})
+            </span>
+          ))}
+        </p>
+      )}
+    </div>
+  )}
+</div>
+</article>
+)
+})}
+</div>
+)
+}
 
   function renderMundialPersonal() {
     if (cargandoMundial) {
@@ -1033,13 +1192,13 @@ function renderTablaPuntos() {
     </section>
   )
   
-  case 'Calendario':
+  case 'Historial':
         return (
           <section className="pagina interior">
             <p className="etiqueta">PARTIDOS Y EVENTOS ENRIKENSES</p>
-            <h1>Calendario<span></span></h1>
+            <h1>Historial<span></span></h1>
             <p className="bajada">
-              Carpe diem
+              Momentos que no volverán... Pero quedaron registrados para siempre
             </p>
 
             {renderCalendario()}
@@ -1213,10 +1372,10 @@ individuales y la química entre compañeros
             </section>
           )
   
-        case 'Pronosticador':
+        case 'Próximo sábado':
           return (
             <section className="pagina interior">
-              <p className="etiqueta">LA CIENCIA NO LLEGA HASTA ACÁ</p>
+              <p className="etiqueta">ESPACIO SEGURO PARA LOS ANTI-CIENCIA</p>
               <h1>Pronosticador<span></span></h1>
               <p className="bajada">
                 Armá los equipos, compará sus ratings y consultá
@@ -1334,7 +1493,7 @@ individuales y la química entre compañeros
     <div className="accesos-grid">
       <TarjetaSeccion
         numero="01"
-        titulo="Calendario"
+        titulo="Historial"
         descripcion="Fechas, partidos y resultados"
         onClick={irACalendario}
       />
@@ -1362,9 +1521,9 @@ individuales y la química entre compañeros
 
       <TarjetaSeccion
         numero="05"
-        titulo="Pronosticador"
-        descripcion="Armá los equipos y consultá al Agorero"
-        onClick={() => navegar('Pronosticador')}
+        titulo="Próximo sábado"
+        descripcion="Armá los equipos y consultá el Oráculo"
+        onClick={() => navegar('Próximo sábado')}
       />
 
       <TarjetaSeccion
@@ -1466,8 +1625,12 @@ individuales y la química entre compañeros
       </header>
 
       <main>
-        {renderContenido()}
-      </main>
+  {partidoParaVotar ? (
+    <Votacion partidoId={partidoParaVotar} />
+  ) : (
+    renderContenido()
+  )}
+</main>
 
       <footer className="pie">
         <div className="pie-marca">
@@ -1478,7 +1641,7 @@ individuales y la química entre compañeros
           </div>
         </div>
 
-        <span>Una historia que se sigue jugando.</span>
+        <span>Fútbol, terceros tiempos imposibles y festejar el encuentro</span>
       </footer>
     </div>
   )

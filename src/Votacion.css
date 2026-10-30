@@ -1,0 +1,455 @@
+
+.votacion-pagina {
+    width: min(100% - 32px, 850px);
+    margin: 36px auto 70px;
+    color: #fff;
+  }
+  
+  .votacion-encabezado {
+    padding: 30px 24px;
+    background: linear-gradient(145deg, #342047, #171020);
+    border: 1px solid #70518f;
+    border-radius: 18px;
+    text-align: center;
+  }
+  
+  .votacion-etiqueta,
+  .votacion-numero {
+    color: #c5a3ff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+  }
+  
+  .votacion-encabezado h1 {
+    color: #171020;
+    -webkit-text-stroke: 2px #fff;
+    paint-order: stroke fill;
+    text-shadow:
+      2px 2px 0 #fff,
+      -2px 2px 0 #fff,
+      2px -2px 0 #fff,
+      -2px -2px 0 #fff;
+  }
+  
+  .votacion-encabezado > p {
+    color: #c9c5d5;
+  }
+  
+  .votacion-marcador {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin: 26px 0;
+  }
+  
+  .votacion-marcador span {
+    color: #d2c5e2;
+    font-weight: 700;
+  }
+  
+  .votacion-marcador strong {
+    font-size: clamp(2rem, 7vw, 3rem);
+    font-variant-numeric: tabular-nums;
+  }
+  
+  .votacion-estado {
+    display: inline-block;
+    padding: 7px 12px;
+    border-radius: 30px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+  
+  .votacion-estado.abierta {
+    color: #b9f3cd;
+    background: #17442e;
+  }
+  
+  .votacion-estado.cerrada {
+    color: #ddd3e8;
+    background: #44394f;
+  }
+  
+  .votacion-bloque {
+    margin-top: 18px;
+    padding: 24px;
+    background: #211832;
+    border: 1px solid #483461;
+    border-radius: 16px;
+  }
+  
+  .votacion-bloque h2 {
+    margin: 8px 0 4px;
+    font-size: 1.5rem;
+  }
+  
+  .votacion-bloque h3 {
+    margin: 0 0 12px;
+    color: #d4c1ef;
+    font-size: 1rem;
+  }
+  
+  .votacion-bloque > p {
+    color: #c9c5d5;
+  }
+  
+  .votacion-bloque select,
+  .votacion-proponer textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 13px;
+    color: #fff;
+    background: #171020;
+    border: 1px solid #65517d;
+    border-radius: 9px;
+    font: inherit;
+  }
+  
+  .votacion-bloque select {
+    margin-top: 10px;
+  }
+  
+  .votacion-bloque select:focus,
+  .votacion-proponer textarea:focus {
+    outline: 2px solid #c5a3ff;
+    outline-offset: 2px;
+  }
+  
+  .votacion-identificado {
+    color: #d9c2ff !important;
+    font-size: 0.9rem;
+  }
+  
+  .votacion-opciones {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 18px;
+  }
+  
+  .votacion-opcion {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    padding: 12px;
+    background: #171020;
+    border: 1px solid #49385f;
+    border-radius: 9px;
+    cursor: pointer;
+  }
+  
+  .votacion-opcion.seleccionada {
+    background: #3a2852;
+    border-color: #c5a3ff;
+    box-shadow: 0 0 0 1px #c5a3ff;
+  }
+  
+  .votacion-opcion input {
+    accent-color: #b58ae9;
+    flex-shrink: 0;
+  }
+  
+  .votacion-opcion span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 700;
+  }
+  
+  .votacion-opcion small {
+    margin-left: auto;
+    color: #aaa2b9;
+    font-size: 0.7rem;
+    text-align: right;
+  }
+  
+  .votacion-sin-goles {
+    padding: 16px;
+    background: #171020;
+    border-radius: 9px;
+  }
+  
+  .votacion-proponer {
+    display: grid;
+    gap: 9px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #483461;
+  }
+  
+  .votacion-proponer label {
+    font-weight: 700;
+  }
+  
+  .votacion-proponer textarea {
+    min-height: 85px;
+    resize: vertical;
+  }
+  
+  .votacion-proponer button,
+  .votacion-confirmacion button {
+    padding: 12px 18px;
+    color: #fff;
+    background: #56318b;
+    border: 1px solid #8860bd;
+    border-radius: 9px;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+  }
+  
+  .votacion-proponer button {
+    justify-self: start;
+  }
+  
+  .votacion-proponer button:hover:not(:disabled),
+  .votacion-confirmacion button:hover:not(:disabled) {
+    background: #7046a8;
+  }
+  
+  .votacion-proponer button:disabled,
+  .votacion-confirmacion button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  
+  .votacion-resultados {
+    display: grid;
+    gap: 10px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #483461;
+  }
+  
+  .votacion-resultados h4 {
+    margin: 0;
+    color: #d9c2ff;
+  }
+  
+  .votacion-resultados > p,
+  .votacion-resultados > small {
+    color: #aaa2b9;
+  }
+  
+  .votacion-barra {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #171020;
+    border-radius: 8px;
+  }
+  
+  .votacion-barra span {
+    overflow-wrap: anywhere;
+  }
+  
+  .votacion-barra strong {
+    color: #d9c2ff;
+    font-variant-numeric: tabular-nums;
+  }
+  
+  .votacion-confirmacion {
+    margin-top: 20px;
+    text-align: center;
+  }
+  
+  .votacion-confirmacion button {
+    width: 100%;
+    padding: 15px;
+    font-size: 1rem;
+  }
+  
+  .votacion-mensaje {
+    padding: 13px 16px;
+    color: #e5d4ff;
+    background: #30213f;
+    border: 1px solid #70518f;
+    border-radius: 9px;
+    line-height: 1.5;
+  }
+  
+  .votacion-error {
+    color: #ffb4b4;
+  }
+  
+  .votacion-cierre {
+    margin-top: 20px;
+    padding: 16px;
+    color: #d9c2ff;
+    background: #30213f;
+    border-radius: 10px;
+    text-align: center;
+  }
+  
+  @media (max-width: 600px) {
+    .votacion-pagina {
+      width: min(100% - 22px, 850px);
+      margin-top: 18px;
+    }
+  
+    .votacion-encabezado,
+    .votacion-bloque {
+      padding: 19px 15px;
+    }
+  
+    .votacion-opciones {
+      grid-template-columns: 1fr;
+    }
+  
+    .votacion-marcador {
+      gap: 10px;
+    }
+  
+    .votacion-opcion {
+      min-height: 42px;
+    }
+  }
+  
+/* Encabezado y acceso a resultados */
+
+.votacion-encabezado h1 {
+    font-size: clamp(2.2rem, 7vw, 3.5rem);
+    letter-spacing: -0.04em;
+  }
+  
+  .votacion-ver-resultados {
+    display: block;
+    margin: 20px auto 0;
+    padding: 10px 16px;
+    color: #e5d4ff;
+    background: transparent;
+    border: 1px solid #8860bd;
+    border-radius: 9px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    transition: background 0.2s ease;
+  }
+  
+  .votacion-ver-resultados:hover {
+    background: #49305f;
+  }
+  
+  /* Buscador y filtros de jugadores */
+  
+  .votacion-filtros {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 16px;
+  }
+  
+  .votacion-filtros input,
+  .votacion-filtros select {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 12px;
+    color: #fff;
+    background: #171020;
+    border: 1px solid #65517d;
+    border-radius: 9px;
+    font: inherit;
+  }
+  
+  .votacion-filtros input:focus,
+  .votacion-filtros select:focus {
+    outline: 2px solid #c5a3ff;
+    outline-offset: 2px;
+  }
+  
+  .votacion-filtros input::placeholder {
+    color: #aaa2b9;
+  }
+  
+  .votacion-cantidad {
+    margin: 8px 0 0;
+    color: #aaa2b9;
+    font-size: 0.78rem;
+  }
+  
+  @media (max-width: 600px) {
+    .votacion-filtros {
+      grid-template-columns: 1fr;
+    }
+  }
+  /* Resultados proporcionales */
+
+.votacion-resultados {
+    margin-top: 28px;
+    padding: 20px;
+    background: #171020;
+    border: 1px solid #49305f;
+    border-radius: 12px;
+  }
+  
+  .votacion-resultados h4 {
+    margin: 0 0 20px;
+    color: #fff;
+  }
+  
+  .votacion-resultado-item {
+    margin-bottom: 17px;
+  }
+  
+  .votacion-resultado-datos {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 7px;
+    color: #f2edf8;
+    font-size: 0.9rem;
+  }
+  
+  .votacion-resultado-datos span {
+    overflow-wrap: anywhere;
+  }
+  
+  .votacion-resultado-datos strong {
+    flex-shrink: 0;
+    color: #d7b8ff;
+    font-size: 0.85rem;
+  }
+  
+  .votacion-barra-fondo {
+    width: 100%;
+    height: 11px;
+    overflow: hidden;
+    background: #35283f;
+    border-radius: 20px;
+  }
+  
+  .votacion-barra-valor {
+    height: 100%;
+    background: linear-gradient(90deg, #7542ad, #c49aff);
+    border-radius: 20px;
+    transition: width 0.5s ease;
+  }
+  
+  .votacion-resultados > small {
+    display: block;
+    margin-top: 14px;
+    color: #aaa2b9;
+  }
+  .votacion-volver {
+    display: block;
+    margin: 0 0 20px;
+    padding: 8px 12px;
+    color: #e5d4ff;
+    background: transparent;
+    border: 1px solid #65517d;
+    border-radius: 8px;
+    font: inherit;
+    cursor: pointer;
+  }
+  
+  .votacion-volver:hover {
+    background: #49305f;
+  }
