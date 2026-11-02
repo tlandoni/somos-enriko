@@ -3,12 +3,14 @@ import { supabase } from './lib/supabaseClient'
 import './App.css'
 import TeamSelector from './TeamSelector'
 import Votacion from './Votacion'
+import Duplas from './Duplas'
 
 
 const SECCIONES = [
   '¿Quiénes somos?',
   'Historial',
   'Estadísticas',
+  'Duplas ⚗️ ',
   'Mundial Personal 🌎',
   'El Muro Enriko',
   'Próximo sábado',
@@ -1249,68 +1251,59 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
     </section>
   )
   
+
   case 'Historial':
-        return (
-          <section className="pagina interior">
-            <p className="etiqueta">PARTIDOS Y EVENTOS ENRIKENSES</p>
-            <h1>Historial<span></span></h1>
-            <p className="bajada">
-              Momentos que no volverán... Pero quedaron registrados para siempre
-            </p>
+    return (
+      <section className="pagina interior">
+        <p className="etiqueta">PARTIDOS Y EVENTOS ENRIKENSES</p>
+        <h1>Historial<span></span></h1>
+        <p className="bajada">
+          Momentos que no volverán... Pero quedaron registrados para siempre
+        </p>
 
-            {renderCalendario()}
-          </section>
-        )
+        {renderCalendario()}
+      </section>
+    )
 
-      case 'Estadísticas':
-        return (
-          <section className="pagina interior">
-<p className="etiqueta">LOS NÚMEROS TAMBIÉN CUENTAN HISTORIAS</p>
-<h1>Estadísticas<span></span></h1>
-<p className="bajada">
-El registro de los partidos oficiales, los rendimientos
-individuales y la química entre compañeros
-</p>
+  case 'Estadísticas':
+    return (
+      <section className="pagina interior">
+        <p className="etiqueta">LOS NÚMEROS TAMBIÉN CUENTAN HISTORIAS</p>
+        <h1>Estadísticas<span></span></h1>
+        <p className="bajada">
+          El registro de los partidos oficiales, los rendimientos
+          individuales y la química entre compañeros
+        </p>
 
-<div className="seccion-estadisticas">
-  <div className="titulo-tabla">
-    <div>
-      <span className="mini-etiqueta">PUNTAJE ACUMULADO</span>
-      <h2>Tabla general de puntos</h2>
-    </div>
-    <span className="sello-tabla">OFICIAL</span>
-  </div>
+        <div className="seccion-estadisticas">
+          <div className="titulo-tabla">
+            <div>
+              <span className="mini-etiqueta">PUNTAJE ACUMULADO</span>
+              <h2>Tabla general de puntos</h2>
+            </div>
+            <span className="sello-tabla">OFICIAL</span>
+          </div>
 
-  {renderTablaPuntos()}
-</div>
+          {renderTablaPuntos()}
+        </div>
 
-<div className="seccion-estadisticas">
-<div className="titulo-tabla">
-<div>
-<span className="mini-etiqueta">RENDIMIENTO INDIVIDUAL</span>
-<h2>Ranking de jugadores</h2>
-</div>
-<span className="sello-tabla">OFICIAL</span>
-</div>
+        <div className="seccion-estadisticas">
+          <div className="titulo-tabla">
+            <div>
+              <span className="mini-etiqueta">RENDIMIENTO INDIVIDUAL</span>
+              <h2>Ranking de jugadores</h2>
+            </div>
+            <span className="sello-tabla">OFICIAL</span>
+          </div>
 
-{renderRankingIndividual()}
-</div>
+          {renderRankingIndividual()}
+        </div>
+      </section>
+    )
 
-<div className="seccion-estadisticas">
-<div className="titulo-tabla">
-<div>
-<span className="mini-etiqueta">JUNTOS EN LA CANCHA</span>
-<h2>Ranking de duplas</h2>
-</div>
-<span className="sello-tabla">QUÍMICA</span>
-</div>
+  case 'Duplas ⚗️ ':
+    return <Duplas />
 
-{renderRankingDuplas()}
-</div>
-</section>
-        )
-        
-      
         case 'El Muro Enriko':
           return (
             <section className="pagina interior muro-pagina">

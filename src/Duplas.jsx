@@ -110,7 +110,7 @@ export default function Duplas() {
   const [ranking, setRanking] = useState([])
   const [paternidades, setPaternidades] = useState([])
   const [frecuencia, setFrecuencia] = useState([])
-
+  const [estadisticasJugadores, setEstadisticasJugadores] = useState([])
   const [cargando, setCargando] = useState(true)
   const [errores, setErrores] = useState({})
   const [filtro, setFiltro] = useState('')
@@ -121,34 +121,19 @@ export default function Duplas() {
     async function cargar() {
       setCargando(true)
 
-      const [r, p, f] = await Promise.all([
+      const [r, p, f, estadisticas] = await Promise.all([
         supabase.from('ranking_duplas_v2').select('*'),
         supabase.from('paternidades_v2').select('*'),
         supabase.from('duplas_frecuencia_v2').select('*'),
+        supabase.from('ranking_completo').select('nombre,pj'),
       ])
-      console.log('DIAGNÓSTICO DUPLAS', {
-        ranking: {
-          cantidad: r.data?.length,
-          error: r.error,
-          muestra: r.data?.slice(0, 2),
-        },
-        paternidades: {
-          cantidad: p.data?.length,
-          error: p.error,
-          muestra: p.data?.slice(0, 2),
-        },
-        frecuencia: {
-          cantidad: f.data?.length,
-          error: f.error,
-          muestra: f.data?.slice(0, 2),
-        },
-      })
+
       if (!activo) return
 
       setRanking(r.data || [])
       setPaternidades(p.data || [])
       setFrecuencia(f.data || [])
-
+      setEstadisticasJugadores(estadisticas.data || [])
       setErrores({
         ranking: r.error?.message || null,
         paternidades: p.error?.message || null,
@@ -179,6 +164,42 @@ export default function Duplas() {
         )
       })
   }, [ranking, filtro])
+  const paternidadesOrdenadas = useMemo(() => {
+    return paternidades
+      .map(d => {
+        const jugador1Gana = Number(d.puntos_1) > Number(d.puntos_2)
+  
+        const padre = jugador1Gana ? d.jugador_1 : d.jugador_2
+        const hijo = jugador1Gana ? d.jugador_2 : d.jugador_1
+  
+        const puntosPadre = jugador1Gana
+          ? Number(d.puntos_1)
+          : Number(d.puntos_2)
+  
+        const puntosHijo = jugador1Gana
+          ? Number(d.puntos_2)
+          : Number(d.puntos_1)
+  
+        return {
+          ...d,
+          padre,
+          hijo,
+          puntosPadre,
+          puntosHijo,
+          diferencial: puntosPadre - puntosHijo,
+          victoriasPadre: jugador1Gana
+            ? Number(d.victorias_1)
+            : Number(d.victorias_2),
+          victoriasHijo: jugador1Gana
+            ? Number(d.victorias_2)
+            : Number(d.victorias_1),
+          porcentajePadre: jugador1Gana
+            ? Number(d.porcentaje_puntos_1)
+            : Number(d.porcentaje_puntos_2),
+        }
+      })
+      .filter(d => d.diferencial > 0 && Number(d.enfrentamientos) >= 3)
+  }, [paternidades])
 
   const columnasDuplas = [
     {
@@ -216,33 +237,103 @@ export default function Duplas() {
   },
   ]
 
-  const columnasPaternidades = [
-    { clave: 'jugador_1', titulo: 'Jugador 1', clase: 'celda-nombre' },
-    { clave: 'jugador_2', titulo: 'Jugador 2', clase: 'celda-nombre' },
-    { clave: 'enfrentamientos', titulo: 'PJ' },
-    { clave: 'victorias_1', titulo: 'Victorias 1' },
-    { clave: 'empates', titulo: 'Empates' },
-    { clave: 'victorias_2', titulo: 'Victorias 2' },
-    { clave: 'puntos_1', titulo: 'Puntos 1' },
-    { clave: 'puntos_2', titulo: 'Puntos 2' },
+ 
+const columnasPaternidades = [
+  {
+    clave: 'padre',
+    titulo: 'Paternidad',
+    formato: d => `${d.padre} es papá de ${d.hijo}`,
+    clase: 'celda-nombre',
+    descripcion: 'Jugador con más puntos frente al otro.',
+  },
+  {
+    clave: 'enfrentamientos',
+    titulo: 'PJ',
+    descripcion: 'Cantidad de enfrentamientos oficiales.',
+  },
+  {
+    clave: 'victoriasPadre',
+    titulo: 'Historial',
+    formato: d => `${d.victoriasPadre} V - ${d.empates} E - ${d.victoriasHijo} D`,
+    descripcion: 'Victorias, empates y derrotas desde la perspectiva del padre.',
+  },
+  {
+    clave: 'puntosPadre',
+    titulo: 'Puntos padre',
+  },
+  {
+    clave: 'puntosHijo',
+    titulo: 'Puntos hijo',
+  },
+  {
+    clave: 'porcentajePadre',
+    titulo: '% puntos',
+    formato: d => `${numero(d.porcentajePadre, 1)}%`,
+    descripcion: 'Porcentaje de los puntos posibles obtenido por el padre.',
+  },
+  {
+    clave: 'diferencial',
+    titulo: 'Diferencial',
+    clase: 'dato-destacado',
+    descripcion: 'Diferencia de puntos a favor del padre.',
+  },
+]
+
+const columnasFrecuencia = [
     {
-      clave: 'porcentaje_puntos_1',
-      titulo: '% puntos 1',
-      formato: d => `${numero(d.porcentaje_puntos_1, 1)}%`,
+      clave: 'jugador_1',
+      titulo: 'Jugador 1',
+      clase: 'celda-nombre',
     },
     {
-      clave: 'porcentaje_puntos_2',
-      titulo: '% puntos 2',
-      formato: d => `${numero(d.porcentaje_puntos_2, 1)}%`,
+      clave: 'jugador_2',
+      titulo: 'Jugador 2',
+      clase: 'celda-nombre',
+    },
+    {
+      clave: 'pj_juntos',
+      titulo: 'PJ juntos',
+      descripcion: 'Cantidad de partidos oficiales compartidos.',
+    },
+    {
+      clave: 'porcentaje_1',
+      titulo: '% Jugador 1',
+      formato: d => `${numero(d.porcentaje_1, 1)}%`,
+      descripcion: 'Porcentaje de los partidos oficiales del Jugador 1 que compartió con esta dupla.',
+    },
+    {
+      clave: 'porcentaje_2',
+      titulo: '% Jugador 2',
+      formato: d => `${numero(d.porcentaje_2, 1)}%`,
+      descripcion: 'Porcentaje de los partidos oficiales del Jugador 2 que compartió con esta dupla.',
     },
   ]
-
-  const columnasFrecuencia = [
-    { clave: 'jugador_1', titulo: 'Jugador 1', clase: 'celda-nombre' },
-    { clave: 'jugador_2', titulo: 'Jugador 2', clase: 'celda-nombre' },
-    { clave: 'pj_juntos', titulo: 'Partidos juntos' },
-  ]
-
+  const frecuenciaConPorcentajes = useMemo(() => {
+    return frecuencia
+      .map(d => {
+        const jugador1 = estadisticasJugadores.find(
+          j => j.nombre === d.jugador_1
+        )
+        const jugador2 = estadisticasJugadores.find(
+          j => j.nombre === d.jugador_2
+        )
+  
+        const pj1 = Number(jugador1?.pj || 0)
+        const pj2 = Number(jugador2?.pj || 0)
+        const pjJuntos = Number(d.pj_juntos || 0)
+  
+        const porcentaje1 = pj1 > 0 ? (pjJuntos / pj1) * 100 : 0
+        const porcentaje2 = pj2 > 0 ? (pjJuntos / pj2) * 100 : 0
+  
+        return {
+          ...d,
+          porcentaje_1: porcentaje1,
+          porcentaje_2: porcentaje2,
+          promedio_porcentajes: (porcentaje1 + porcentaje2) / 2,
+        }
+      })
+      .sort((a, b) => b.promedio_porcentajes - a.promedio_porcentajes)
+  }, [frecuencia, estadisticasJugadores])
   return (
     <section className="pagina interior duplas-pagina">
       <p className="etiqueta">JUNTOS EN LA CANCHA</p>
@@ -327,15 +418,18 @@ export default function Duplas() {
         <Estado
   cargando={cargando}
   error={errores.paternidades}
-  vacio={paternidades.length === 0
+  vacio={paternidadesOrdenadas.length === 0
     ? 'Todavía no hay enfrentamientos suficientes.'
     : null}
 >
-  <Tabla
+    <Tabla
     columnas={columnasPaternidades}
-    filas={paternidades}
+    filas={paternidadesOrdenadas}
     claveFila={d => `${d.jugador_1_id}-${d.jugador_2_id}`}
-  />
+    ordenInicial="diferencial"
+    direccionInicial="desc"
+    limite={10}
+    />  
 </Estado>
       </div>
 
@@ -352,18 +446,21 @@ export default function Duplas() {
           Las parejas que más veces compartieron equipo.
         </p>
 
-        <Estado
+       <Estado
   cargando={cargando}
   error={errores.frecuencia}
   vacio={frecuencia.length === 0
     ? 'Todavía no hay parejas registradas.'
     : null}
 >
-  <Tabla
-    columnas={columnasFrecuencia}
-    filas={frecuencia}
-    claveFila={d => `${d.jugador_1_id}-${d.jugador_2_id}`}
-  />
+<Tabla
+  columnas={columnasFrecuencia}
+  filas={frecuenciaConPorcentajes}
+  claveFila={d => `${d.jugador_1_id}-${d.jugador_2_id}`}
+  ordenInicial="pj_juntos"
+  direccionInicial="desc"
+  limite={10}
+/>
 </Estado>      </div>
     </section>
   )

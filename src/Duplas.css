@@ -1,0 +1,72 @@
+
+.duplas-pagina {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .duplas-bloque {
+    width: 100%;
+    min-width: 0;
+  }
+  
+  .duplas-descripcion {
+    color: inherit;
+    opacity: 0.8;
+    line-height: 1.6;
+    margin: 0 0 1rem;
+  }
+  
+  .duplas-busqueda {
+    width: 100%;
+    max-width: 420px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    font: inherit;
+  }
+  
+  .duplas-criterios {
+    margin-top: 1rem;
+  }
+  
+  .duplas-criterios p {
+    margin: 0.5rem 0;
+    line-height: 1.5;
+  }
+  
+  .duplas-estado,
+  .duplas-error {
+    padding: 1rem;
+    opacity: 0.8;
+  }
+  
+  .duplas-error {
+    color: #ff7777;
+  }
+  
+  .duplas-bloque .tabla-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  
+  .duplas-bloque table {
+    min-width: 700px;
+    width: 100%;
+  }
+  
+  @media (max-width: 600px) {
+    .duplas-pagina {
+      gap: 1rem;
+    }
+  
+    .duplas-busqueda {
+      max-width: 100%;
+    }
+  
+    .duplas-bloque {
+      padding: 0.8rem;
+    }
+  }
+  
