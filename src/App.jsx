@@ -928,74 +928,86 @@ function renderCalendario() {
 )
 }
 
-  function renderMundialPersonal() {
-    if (cargandoMundial) {
-      return <SinDatos>Calculando las campañas mundialistas…</SinDatos>
-    }
-  
-    if (errorMundial) {
-      return (
-        <ErrorDatos
-          mensaje={`No pudimos cargar el Mundial Personal: ${errorMundial}`}
-        />
-      )
-    }
-  
-    if (!mundial.length) {
-      return <SinDatos>No hay jugadores para mostrar.</SinDatos>
-    }
-  
-    const ordenEstados = {
-      'Campeón del mundo': 7,
-      'Final': 6,
-      'Partido por el tercer puesto': 5,
-      'Semifinal': 4,
-      'Cuartos de final': 3,
-      'Octavos de final': 2,
-      'Fase de grupos': 1,
-    }
-  
-    const jugadoresOrdenados = [...mundial].sort((a, b) => {
-      if (a.es_campeon !== b.es_campeon) {
-        return a.es_campeon ? -1 : 1
-      }
-  
-      const rangoA = ordenEstados[a.estado_actual] || 0
-      const rangoB = ordenEstados[b.estado_actual] || 0
-  
-      return rangoB - rangoA || a.nombre.localeCompare(b.nombre, 'es')
-    })
+function renderMundialPersonal() {
+  if (cargandoMundial) {
+    return <SinDatos>Calculando las campañas mundialistas…</SinDatos>
+  }
 
+  if (errorMundial) {
     return (
-      <div className="mundial-contenido">
-        <div className="mundial-intro">
-          <span className="mini-etiqueta">CADA PARTIDO CUENTA</span>
-          <h2>El camino a la gloria.</h2>
+      <ErrorDatos
+        mensaje={`No pudimos cargar el Mundial Personal: ${errorMundial}`}
+      />
+    )
+  }
+
+  if (!mundial.length) {
+    return <SinDatos>No hay jugadores para mostrar.</SinDatos>
+  }
+
+  const ordenEstados = {
+    'Campeón del mundo': 7,
+    'Final': 6,
+    'Partido por el tercer puesto': 5,
+    'Semifinal': 4,
+    'Cuartos de final': 3,
+    'Octavos de final': 2,
+    'Fase de grupos': 1,
+  }
+
+  const jugadoresOrdenados = [...mundial].sort((a, b) => {
+    if (a.es_campeon !== b.es_campeon) {
+      return a.es_campeon ? -1 : 1
+    }
+
+    const rangoA = ordenEstados[a.estado_actual] || 0
+    const rangoB = ordenEstados[b.estado_actual] || 0
+
+    return rangoB - rangoA || a.nombre.localeCompare(b.nombre, 'es')
+  })
+
+  const simbolosResultado = {
+    G: { simbolo: '✓', etiqueta: 'Victoria', clase: 'mundial-victoria' },
+    E: { simbolo: '🤝', etiqueta: 'Empate', clase: 'mundial-empate' },
+    P: { simbolo: '✕', etiqueta: 'Derrota', clase: 'mundial-derrota' },
+  }
+
+  return (
+    <div className="mundial-contenido">
+      <div className="mundial-intro">
+        <span className="mini-etiqueta">CADA PARTIDO CUENTA</span>
+        <h2>El camino a la gloria.</h2>
+        <p>
+          Cada jugador disputa su propio Mundial. La campaña actual
+          puede cambiar; la gloria conquistada queda para siempre.
+        </p>
+      </div>
+
+      <div className="mundial-diego">
+        <img
+          src="/images/maradona-silueta.png"
+          alt="Silueta de Diego Maradona"
+          className="mundial-diego-imagen"
+        />
+        <div className="mundial-diego-texto">
+          <span className="mundial-diego-etiqueta">
+            EL SUEÑO DE TODO ENRIKO
+          </span>
           <p>
-            Cada jugador disputa su propio Mundial. La campaña actual
-            puede cambiar; la gloria conquistada queda para siempre.
+            Siete partidos. Una consagración. La gloria eterna.
           </p>
         </div>
-  
-  
-<div className="mundial-diego">
-  <img
-    src="/images/maradona-silueta.png"
-    alt="Silueta de Diego Maradona"
-    className="mundial-diego-imagen"
-  />
-  <div className="mundial-diego-texto">
-    <span className="mundial-diego-etiqueta">
-      EL SUEÑO DE TODO ENRIKO
-    </span>
-    <p>
-      Siete partidos. Una consagración. La gloria eterna.
-    </p>
-  </div>
-</div>
+      </div>
 
-        <div className="mundial-grid">
-          {jugadoresOrdenados.map((jugador) => (
+      <div className="mundial-grid">
+        {jugadoresOrdenados.map((jugador) => {
+          const recorrido = (jugador.recorrido_actual || '')
+          .trim()
+          .split(/\s+/)
+          .filter(resultado => simbolosResultado[resultado])
+          .reverse()
+
+          return (
             <article
               className={`mundial-card ${jugador.es_campeon ? 'mundial-campeon' : ''}`}
               key={jugador.jugador_id}
@@ -1004,51 +1016,74 @@ function renderCalendario() {
                 <span className="mundial-avatar">
                   {(jugador.nombre || '?').trim().charAt(0).toUpperCase()}
                 </span>
-  
+
                 <div className="mundial-identidad">
                   <h3>{jugador.nombre}</h3>
                   <span>
                     {jugador.partidos_oficiales} partidos oficiales
                   </span>
                 </div>
-  
+
                 {jugador.es_campeon && (
                   <span className="mundial-corona" title="Campeón histórico">
                     🏆
                   </span>
                 )}
               </div>
-  
+
               <div className="mundial-dato">
                 <span className="mini-etiqueta">ESTADO ACTUAL</span>
                 <strong>{jugador.estado_actual}</strong>
               </div>
-  
+
+              <div className="mundial-dato mundial-recorrido">
+                <span className="mini-etiqueta">RECORRIDO ACTUAL</span>
+
+                {recorrido.length > 0 ? (
+                  <div className="mundial-resultados">
+                    {recorrido.map((resultado, indice) => {
+                      const dato = simbolosResultado[resultado]
+
+                      return (
+                        <span
+                          key={`${jugador.jugador_id}-${indice}`}
+                          className={`mundial-resultado ${dato.clase}`}
+                          title={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${dato.etiqueta}`}
+aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${dato.etiqueta}`}
+                        >
+                          {dato.simbolo}
+                        </span>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <span className="mundial-sin-recorrido">
+                    Todavía sin recorrido
+                  </span>
+                )}
+              </div>
+
               <div className="mundial-dato mundial-historico">
                 <span className="mini-etiqueta">
                   {jugador.es_campeon ? 'GLORIA ETERNA' : 'MEJOR HISTÓRICO'}
                 </span>
-                
-              
 
                 <strong>
-  {jugador.es_campeon
-    ? '🏆 Campeón del mundo'
-    : (!jugador.mejor_historico ||
-        jugador.mejor_historico === 'Sin clasificar')
-      ? 'Fase de grupos'
-      : jugador.mejor_historico}
-</strong>
-
-
-
+                  {jugador.es_campeon
+                    ? '🏆 Campeón del mundo'
+                    : (!jugador.mejor_historico ||
+                        jugador.mejor_historico === 'Sin clasificar')
+                      ? 'Fase de grupos'
+                      : jugador.mejor_historico}
+                </strong>
               </div>
             </article>
-          ))}
-        </div>
+          )
+        })}
       </div>
-    )
-  }
+    </div>
+  )
+}
   
   function renderNosotros() {
     if (errores.jugadores) return renderError('jugadores')

@@ -2218,3 +2218,103 @@ tbody tr:hover {
     font-size: 2.3rem;
   }
 }
+/* Recorrido del Mundial Personal */
+
+.mundial-recorrido {
+  gap: 0.65rem;
+}
+
+.mundial-resultados {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 32px;
+}
+
+.mundial-resultado {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  border: 1px solid transparent;
+}
+
+.mundial-victoria {
+  color: #7ee2a8;
+  background: rgba(46, 160, 95, 0.16);
+  border-color: rgba(46, 160, 95, 0.35);
+}
+
+.mundial-empate {
+  color: #f0d58a;
+  background: rgba(210, 170, 65, 0.14);
+  border-color: rgba(210, 170, 65, 0.3);
+}
+
+.mundial-derrota {
+  color: #ff9292;
+  background: rgba(210, 65, 65, 0.14);
+  border-color: rgba(210, 65, 65, 0.3);
+}
+
+.mundial-sin-recorrido {
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+/* Mundial Personal: tarjetas compactas */
+
+.mundial-grid {
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, 220px), 1fr)
+  );
+  gap: 0.75rem;
+}
+
+.mundial-card {
+  padding: 0.9rem;
+  border-radius: 14px;
+}
+
+.mundial-card-cabecera {
+  gap: 0.65rem;
+  margin-bottom: 0.8rem;
+}
+
+.mundial-avatar {
+  width: 38px;
+  height: 38px;
+  flex-basis: 38px;
+}
+
+.mundial-identidad h3 {
+  font-size: 1rem;
+}
+
+.mundial-identidad span {
+  font-size: 0.75rem;
+}
+
+.mundial-dato {
+  gap: 0.35rem;
+  padding: 0.6rem 0;
+}
+
+.mundial-dato strong {
+  font-size: 0.92rem;
+}
+
+.mundial-resultado {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  font-size: 0.85rem;
+}
+
+.mundial-resultados {
+  gap: 0.35rem;
+}
