@@ -584,7 +584,7 @@ export default function TeamSelector() {
 
         {pronostico && (
           <div className="ts-pronostico">
-            <span>Suena un cascabel. Una voz rasposa canta "¡Falta envido y truco! Por mi botella que este partido va a salir</span>
+            <span>Suena un cascabel. Una voz rasposa canta "¡Falta envido y truco! Por mi botella que este partido va a salir..."</span>
             <h2>  
               Claros {pronostico.golesClaros} – {pronostico.golesOscuros} Oscuros
             </h2>
