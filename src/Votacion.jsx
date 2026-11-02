@@ -11,6 +11,7 @@ export default function Votacion({ partidoId }) {
   const [elegidoMvp, setElegidoMvp] = useState('')
   const [golElegido, setGolElegido] = useState('')
   const [descripcionGol, setDescripcionGol] = useState('')
+  const [autorGolId, setAutorGolId] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [filtroJugador, setFiltroJugador] = useState('')
@@ -83,39 +84,43 @@ export default function Votacion({ partidoId }) {
   async function proponerGol(evento) {
     evento.preventDefault()
     setMensaje('')
-
+  
     if (!votanteId) {
-      setMensaje('Primero identificáte seleccionando tu nombre.')
+      setMensaje('Primero identificá quién sos.')
       return
     }
-
+  
+    if (!autorGolId) {
+      setMensaje('Seleccioná quién convirtió el gol.')
+      return
+    }
+  
     if (!descripcionGol.trim()) {
-      setMensaje('Escribí una descripción del gol.')
+      setMensaje('Agregá una descripción del gol.')
       return
     }
-
+  
     setGuardando(true)
-
-    const { data, error: errorPropuesta } = await supabase.rpc(
-      'proponer_gol',
-      {
-        p_partido_id: Number(partidoId),
-        p_jugador_id: Number(votanteId),
-        p_descripcion: descripcionGol.trim(),
-      }
-    )
-
-    if (errorPropuesta) {
-      setMensaje(errorPropuesta.message)
-      setGuardando(false)
+  
+    const { data, error } = await supabase.rpc('proponer_gol', {
+      p_partido_id: Number(partidoId),
+      p_jugador_id: Number(votanteId),
+      p_autor_gol_id: Number(autorGolId),
+      p_descripcion: descripcionGol.trim(),
+    })
+  
+    setGuardando(false)
+  
+    if (error) {
+      setMensaje(error.message)
       return
     }
-
+  
     await cargarDetalle()
     setGolElegido(String(data))
     setDescripcionGol('')
-    setMensaje('Gol incorporado a las propuestas. ¡Ya podés votarlo!')
-    setGuardando(false)
+    setAutorGolId('')
+    setMensaje('¡Gol propuesto!')
   }
 
   async function confirmarVotos() {
@@ -368,30 +373,52 @@ export default function Votacion({ partidoId }) {
                   disabled={!abierta || !votanteId}
                 />
                 <span>{gol.descripcion}</span>
-                <small>Propuesto por {gol.nombre_proponente}</small>
+                <small>
+                Gol de {gol.nombre_autor_gol || 'Autor no registrado'}
+                {' · '}
+                Propuesto por {gol.nombre_proponente}
+</small>
               </label>
             ))}
           </div>
         )}
 
-        <form className="votacion-proponer" onSubmit={proponerGol}>
-          <label htmlFor="descripcion-gol">¿Falta algún gol?</label>
-          <textarea
-            id="descripcion-gol"
-            value={descripcionGol}
-            onChange={(e) => setDescripcionGol(e.target.value)}
-            placeholder="Ej.: Sablazo de Fede Black a donde duermen las arañas"
-            maxLength={300}
-            minLength={5}
-            disabled={!abierta || !votanteId || guardando}
-          />
-          <button
-            type="submit"
-            disabled={!abierta || !votanteId || guardando}
-          >
-            + Proponer gol
-          </button>
-        </form>
+<form className="votacion-proponer" onSubmit={proponerGol}>
+  <label htmlFor="autor-gol">¿Quién hizo el gol?</label>
+
+  <select
+    id="autor-gol"
+    value={autorGolId}
+    onChange={(e) => setAutorGolId(e.target.value)}
+    disabled={!abierta || !votanteId || guardando}
+  >
+    <option value="">Seleccionar jugador…</option>
+    {participantes.map((jugador) => (
+      <option key={jugador.jugador_id} value={jugador.jugador_id}>
+        {jugador.nombre} · {jugador.equipo}
+      </option>
+    ))}
+  </select>
+
+  <label htmlFor="descripcion-gol">Describí brevemente el gol</label>
+
+  <textarea
+    id="descripcion-gol"
+    value={descripcionGol}
+    onChange={(e) => setDescripcionGol(e.target.value)}
+    placeholder="Ej.: Sablazo de Fede Black a donde duermen las arañas"
+    maxLength={300}
+    minLength={5}
+    disabled={!abierta || !votanteId || guardando}
+  />
+
+  <button
+    type="submit"
+    disabled={!abierta || !votanteId || !autorGolId || guardando}
+  >
+    + Proponer gol
+  </button>
+</form>
 
         {resultadosVisibles && (
   <div className="votacion-resultados">
@@ -409,6 +436,9 @@ export default function Votacion({ partidoId }) {
           <div className="votacion-resultado-item" key={gol.gol_id}>
             <div className="votacion-resultado-datos">
               <span>{gol.descripcion}</span>
+              <small>
+            ⚽ {gol.nombre_autor_gol || 'Autor no registrado'}
+            </small>
               <strong>
                 {gol.votos} · {porcentaje.toFixed(0)}%
               </strong>

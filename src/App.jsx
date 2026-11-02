@@ -73,7 +73,11 @@ function TarjetaSeccion({ numero, titulo, descripcion, onClick }) {
 }
 
 function App() {
-  const [seccion, setSeccion] = useState('¿Quiénes somos?')
+  const parametrosURL = new URLSearchParams(window.location.search)
+
+  const [seccion, setSeccion] = useState(
+  parametrosURL.get('seccion') || '¿Quiénes somos?'
+)
   const partidoParaVotar = new URLSearchParams(
     window.location.search
   ).get('votar')
@@ -350,6 +354,12 @@ const resultados = await Promise.all([
   }
 
   function navegar(destino) {
+    if (partidoParaVotar) {
+      window.location.href =
+        `${window.location.pathname}?seccion=${encodeURIComponent(destino)}`
+      return
+    }
+  
     setSeccion(destino)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -875,28 +885,40 @@ function renderCalendario() {
 
   {detalleVotacion?.estado === 'cerrada' && (
     <div className="partido-premiados">
-      {ganadoresTono.length > 0 && (
-        <p>
-          🏅 <strong>Premio Toño:</strong>{' '}
+    {ganadoresTono.length > 0 && (
+      <div className="premio-item">
+        <strong>🏅 Premio Toño</strong>
+        <div className="premio-ganadores">
           {ganadoresTono.map((item) => (
             <span key={item.jugador_id}>
-              {item.nombre} ({item.votos})
+              {item.nombre}
+              <small>{item.votos} votos</small>
             </span>
           ))}
-        </p>
-      )}
-
-      {ganadoresGol.length > 0 && (
-        <p>
-          ⚽ <strong>Mejor gol:</strong>{' '}
+        </div>
+      </div>
+    )}
+  
+    {ganadoresGol.length > 0 && (
+      <div className="premio-item">
+        <strong>⚽ Mejor gol</strong>
+        <div className="premio-ganadores">
           {ganadoresGol.map((item) => (
             <span key={item.gol_id}>
-              {item.descripcion} ({item.votos})
+              <span className="premio-descripcion">
+                {item.descripcion}
+              </span>
+              <small>
+                {item.nombre_autor_gol || 'Autor no registrado'}
+                {' · '}
+                {item.votos} votos
+              </small>
             </span>
           ))}
-        </p>
-      )}
-    </div>
+        </div>
+      </div>
+    )}
+  </div>
   )}
 </div>
 </article>
