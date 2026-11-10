@@ -4,7 +4,7 @@ import './App.css'
 import TeamSelector from './TeamSelector'
 import Votacion from './Votacion'
 import Duplas from './Duplas'
-
+import Admin from './Admin'
 
 const SECCIONES = [
   '¿Quiénes somos?',
@@ -242,7 +242,7 @@ const resultados = await Promise.all([
       activo = false
     }
   }, [partidos])
-  
+
   useEffect(() => {
     let activo = true
   
@@ -1249,7 +1249,14 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
     </section>
   )
   
-
+  case 'Administración':
+    return (
+      <section className="pagina interior">
+        <p className="etiqueta">SOLO PARA ADMINISTRADORES</p>
+        <h1>Administración<span></span></h1>
+        <Admin />
+      </section>
+    )
   case 'Historial':
     return (
       <section className="pagina interior">
@@ -1689,7 +1696,7 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
   )}
 </main>
 
-      <footer className="pie">
+<footer className="pie">
         <div className="pie-marca">
           <img src="/escudo-somos-enriko.jpg" alt="" />
           <div>
@@ -1699,6 +1706,15 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
         </div>
 
         <span>Fútbol, terceros tiempos imposibles y festejar el encuentro</span>
+
+        <div className="pie-enlaces">
+          <button className="enlace" onClick={() => navegar('Cargar partido')}>
+            Cargar resultado ↗
+          </button>
+          <button className="enlace" onClick={() => navegar('Administración')}>
+            Administración ↗
+          </button>
+        </div>
       </footer>
     </div>
   )

@@ -1975,3 +1975,8 @@ tbody tr:hover {
     transform: none;
   }
 }
+.pie-enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
