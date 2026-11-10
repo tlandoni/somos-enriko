@@ -5,6 +5,7 @@ import TeamSelector from './TeamSelector'
 import Votacion from './Votacion'
 import Duplas from './Duplas'
 import Admin from './Admin'
+import CargarPartido from './CargarPartido'
 
 const SECCIONES = [
   '¿Quiénes somos?',
@@ -1248,7 +1249,20 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
       {renderMundialPersonal()}
     </section>
   )
-  
+
+  case 'Cargar partido':
+  return (
+    <section className="pagina interior">
+      <p className="etiqueta">LA CRÓNICA DEL SÁBADO</p>
+      <h1>Cargar partido<span></span></h1>
+      <p className="bajada">
+        Registrá el resultado y los equipos. Para hacerlo necesitás
+        el código del grupo.
+      </p>
+
+      <CargarPartido />
+    </section>
+  )
   case 'Administración':
     return (
       <section className="pagina interior">
