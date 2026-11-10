@@ -113,7 +113,7 @@ const [textoMuro, setTextoMuro] = useState('')
 const [categoriaMuro, setCategoriaMuro] = useState('Libre')
 const [publicandoMuro, setPublicandoMuro] = useState(false)
 const [avisoMuro, setAvisoMuro] = useState('')
-
+const [trampaMuro, setTrampaMuro] = useState('')   
   const [cargando, setCargando] = useState(true)
   const [errores, setErrores] = useState({})
   
@@ -224,28 +224,16 @@ const resultados = await Promise.all([
     async function cargarDetallesVotacion() {
       if (!partidos.length) return
   
-      const resultados = await Promise.all(
-        partidos.map(async (partido) => {
-          const { data, error } = await supabase.rpc(
-            'obtener_detalle_votacion',
-            { p_partido_id: partido.id }
-          )
-  
-          if (error) {
-            console.error(
-              `Error al cargar votación del partido ${partido.id}:`,
-              error.message
-            )
-            return [partido.id, null]
-          }
-  
-          return [partido.id, data]
-        })
-      )
+      const { data, error } = await supabase.rpc('obtener_detalles_votacion')
   
       if (!activo) return
   
-      setDetallesVotacion(Object.fromEntries(resultados))
+      if (error) {
+        console.error('Error al cargar las votaciones:', error.message)
+        return
+      }
+  
+      setDetallesVotacion(data || {})
     }
   
     cargarDetallesVotacion()
@@ -254,6 +242,7 @@ const resultados = await Promise.all([
       activo = false
     }
   }, [partidos])
+  
   useEffect(() => {
     let activo = true
   
@@ -316,16 +305,22 @@ const resultados = await Promise.all([
     }
   }, [])
 
-  
+  useEffect(() => {
+    if (!avisoMuro) return
+    const t = setTimeout(() => setAvisoMuro(''), 5000)
+    return () => clearTimeout(t)
+  }, [avisoMuro])
+
   async function publicarMensajeMuro(evento) {
     evento.preventDefault()
+    if (trampaMuro) return   // un bot completó el campo oculto
     setAvisoMuro('')
-
+    evento.preventDefault()
     const nombre = nombreMuro.trim()
     const mensaje = textoMuro.trim()
 
     if (!nombre || !mensaje) {
-      setAvisoMuro('Completá tu nombre y tu mensaje.')
+      setAvisoMuro('Completá tu nombre y tu mensaje')
       return
     }
 
@@ -344,7 +339,11 @@ const resultados = await Promise.all([
     setPublicandoMuro(false)
 
     if (error) {
-      setAvisoMuro(`No se pudo publicar: ${error.message}`)
+      setAvisoMuro(
+        error.message.includes('demasiados')
+          ? 'La pared está muy concurrida. Probá en un minuto.'
+          : 'No se pudo publicar. Revisá los datos e intentá de nuevo.'
+      )
       return
     }
 
@@ -1039,7 +1038,7 @@ function renderMundialPersonal() {
               </div>
 
               <div className="mundial-dato mundial-recorrido">
-                <span className="mini-etiqueta">RECORRIDO ACTUAL</span>
+                <span className="mini-etiqueta">CAMPAÑA ACTUAL</span>
 
                 {recorrido.length > 0 ? (
                   <div className="mundial-resultados">
@@ -1060,7 +1059,7 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
                   </div>
                 ) : (
                   <span className="mundial-sin-recorrido">
-                    Todavía sin recorrido
+                    Le faltan partidos
                   </span>
                 )}
               </div>
@@ -1097,8 +1096,7 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
     if (!jugadores.length) {
       return <SinDatos>No hay integrantes registrados todavía.</SinDatos>
     }
-      console.log('Árbol de integrantes:', arbolJugadores)
-      console.log('Insignias recibidas:', insignias)
+
     return (
       <>
         <div className="comunidad-cabecera">
@@ -1362,7 +1360,16 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
                     rows={5}
                     required
                   />
-  
+                  <input
+                    type="text"
+                    name="sitio-web"
+                    value={trampaMuro}
+                    onChange={(e) => setTrampaMuro(e.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    style={{ position: 'absolute', left: '-9999px' }}
+                  />
                   <div className="muro-formulario-pie">
                     <span>{textoMuro.length}/500</span>
                     <button
@@ -1696,5 +1703,4 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
     </div>
   )
 }
-
 export default App
