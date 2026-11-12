@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
 import './App.css'
+import Inicio from './Inicio'
 import TeamSelector from './TeamSelector'
 import Votacion from './Votacion'
 import Duplas from './Duplas'
@@ -1477,196 +1478,22 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
           </section>
         )
 
-      case '¿Quiénes somos?':
-      default:
-        return (
-          
-<>
-  <section className="portada">
-    <div className="portada-contenido">
-      <div className="portada-marca">
-        <img
-          src="/escudo-somos-enriko.jpg"
-          alt="Escudo del Club Social y Deportivo Somos Enriko"
-          className="escudo-portada"
-        />
-
-        <div className="portada-textos">
-          <p className="etiqueta">
-            CLUB SOCIAL, CULTURAL Y DEPORTIVO
-          </p>
-
-          <h1>
-            SOMOS
-            <br />
-            <span>ENRIKO</span>
-          </h1>
-
-          <p className="portada-descripcion">
-            Para un Enriko no hay nada mejor que otro Enriko
-          </p>
-        </div>
-      </div>
-
-      <div className="portada-pie">
-        <span>
-          DE LA CANCHA A LA PLACITA, DE LA PLACITA AL MUNDO,
-          AHORA EN LA WEB
-        </span>
-
-        <div className="portada-acciones">
-          <button
-            className="boton-principal"
-            onClick={irAExplorar}
-          >
-            Explorá <span>↓</span>
-          </button>
-
-          <button
-            className="boton-secundario"
-            onClick={irAEstadisticas}
-          >
-            Ver ranking de puntos <span>↗</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section className="bloque comunidad-intro">
-    <div className="introduccion-club">
-      <p className="etiqueta">MÁS QUE UN EQUIPO</p>
-      <h2>¿Quiénes somos?</h2>
-
-      <p>
-        Somos Enriko. Nos encontramos alrededor del fútbol
-        y construimos, sábado a sábado, una historia compartida.
-      </p>
-
-      <p>
-        Esta web es nuestro lugar para registrar lo que jugamos,
-        recuperar lo que vivimos y compartir lo que hacemos
-        dentro y fuera de la cancha.
-      </p>
-    </div>
-
-    <img
-      src="/escudo-somos-enriko.jpg"
-      alt=""
-      className="escudo-intro"
-    />
-  </section>
-
-  <section className="bloque" id="explorar">
-    <div className="encabezado-bloque">
-      <div>
-        <p className="etiqueta">RECORRÉ EL GRUPO</p>
-        <h2>Explorá.</h2>
-        <p>
-          Los partidos, los números y las historias de Somos Enriko
-        </p>
-      </div>
-    </div>
-
-    <div className="accesos-grid">
-      <TarjetaSeccion
-        numero="01"
-        titulo="Historial"
-        descripcion="Fechas, partidos y resultados"
-        onClick={irACalendario}
-      />
-
-      <TarjetaSeccion
-        numero="02"
-        titulo="Estadísticas"
-        descripcion="Puntos totales, jugadores y duplas"
-        onClick={irAEstadisticas}
-      />
-
-      <TarjetaSeccion
-        numero="03"
-        titulo="Mundial Personal 🌎"
-        descripcion="El camino individual hacia la gloria"
-        onClick={() => navegar('Mundial Personal 🌎')}
-      />
-
-      <TarjetaSeccion
-        numero="04"
-        titulo="Nosotros"
-        descripcion="Los Enrikos, sus historias e insignias"
-        onClick={() => navegar('Nosotros')}
-      />
-
-      <TarjetaSeccion
-        numero="05"
-        titulo="Próximo sábado"
-        descripcion="Armá los equipos y consultá el Oráculo"
-        onClick={() => navegar('Próximo sábado')}
-      />
-
-      <TarjetaSeccion
-        numero="06"
-        titulo="El Muro Enriko"
-        descripcion="Declaraciones, recuerdos y pintadas"
-        onClick={() => navegar('El Muro Enriko')}
-      />
-    </div>
-  </section>
-
-  <section className="bloque portada-ranking" id="ranking-puntos">
-    <div className="encabezado-bloque">
-      <div>
-        <p className="etiqueta">EL PUNTAJE ACUMULADO</p>
-        <h2>Líderes</h2>
-        <p>¿Quién lidera la tabla general?</p>
-      </div>
-
-      <button className="enlace" onClick={irAEstadisticas}>
-        Ver tabla completa ↗
-      </button>
-    </div>
-
-    {errores.puntosJugadores ? (
-      <ErrorDatos mensaje={errores.puntosJugadores} />
-    ) : cargando ? (
-      <SinDatos>Cargando la tabla de puntos…</SinDatos>
-    ) : puntosJugadores.length === 0 ? (
-      <SinDatos>
-        Todavía no hay puntos para mostrar.
-      </SinDatos>
-    ) : (
-      <div className="tabla-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Jugador</th>
-              <th>PJ</th>
-              <th>Puntos</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {puntosJugadores.slice(0, 5).map((jugador, indice) => (
-              <tr key={jugador.nombre}>
-                <td className="puesto">{indice + 1}</td>
-                <td className="celda-nombre">{jugador.nombre}</td>
-                <td>{numero(jugador.pj)}</td>
-                <td className="dato-destacado">
-                  {numero(jugador.puntos)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )}
-  </section>
-</>
-
-        )
-    }
-  }
+        case '¿Quiénes somos?':
+          default:
+            return (
+              <Inicio
+                partidos={partidos}
+                detallesVotacion={detallesVotacion}
+                puntosJugadores={puntosJugadores}
+                cargando={cargando}
+                errores={errores}
+                formatearFecha={formatearFecha}
+                numero={numero}
+                navegar={navegar}
+              />
+            )
+        }
+      }
 
   return (
     <div className="sitio">
