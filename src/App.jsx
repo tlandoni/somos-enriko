@@ -5,6 +5,7 @@ import Inicio from './Inicio'
 import TeamSelector from './TeamSelector'
 import Votacion from './Votacion'
 import Duplas from './Duplas'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Admin from './Admin'
 import CargarPartido from './CargarPartido'
 
@@ -18,6 +19,18 @@ const SECCIONES = [
   'Próximo sábado',
   'Nosotros',
 ]
+const RUTAS = {
+  '¿Quiénes somos?': '/',
+  'Historial': '/historial',
+  'Estadísticas': '/estadisticas',
+  'Duplas ⚗️ ': '/duplas',
+  'Mundial Personal 🌎': '/mundial',
+  'El Muro Enriko': '/muro',
+  'Próximo sábado': '/proximo-sabado',
+  'Nosotros': '/nosotros',
+  'Cargar partido': '/cargar',
+  'Administración': '/admin',
+}
 
 
 function formatearFecha(fecha) {
@@ -77,14 +90,15 @@ function TarjetaSeccion({ numero, titulo, descripcion, onClick }) {
 }
 
 function App() {
-  const parametrosURL = new URLSearchParams(window.location.search)
+  const ubicacion = useLocation()
+  const irA = useNavigate()
+  const parametrosURL = new URLSearchParams(ubicacion.search)
 
   const [seccion, setSeccion] = useState(
-  parametrosURL.get('seccion') || '¿Quiénes somos?'
-)
-  const partidoParaVotar = new URLSearchParams(
-    window.location.search
-  ).get('votar')
+    parametrosURL.get('seccion') || '¿Quiénes somos?'
+  )
+  const coincidenciaVotacion = ubicacion.pathname.match(/^\/votar\/([^/]+)$/)
+  const partidoParaVotar = coincidenciaVotacion?.[1] || parametrosURL.get('votar')
   const [ranking, setRanking] = useState([])
   const [puntosJugadores, setPuntosJugadores] = useState([])
   const [arbolJugadores, setArbolJugadores] = useState([])
@@ -355,15 +369,44 @@ const resultados = await Promise.all([
     setCategoriaMuro('Libre')
     setAvisoMuro('¡Pintada publicada! 💜')
   }
-
-  function navegar(destino) {
-    if (partidoParaVotar) {
-      window.location.href =
-        `${window.location.pathname}?seccion=${encodeURIComponent(destino)}`
+  useEffect(() => {
+    const parametros = new URLSearchParams(ubicacion.search)
+  
+    // Compatibilidad con los enlaces antiguos de votación
+    const partidoAntiguo = parametros.get('votar')
+  
+    if (partidoAntiguo) {
+      irA(`/votar/${partidoAntiguo}`, { replace: true })
       return
     }
   
-    setSeccion(destino)
+    // Las votaciones tienen su propia ruta
+    if (ubicacion.pathname.startsWith('/votar/')) {
+      return
+    }
+  
+    // Compatibilidad con los enlaces antiguos de secciones
+    const seccionAntigua = parametros.get('seccion')
+  
+    if (seccionAntigua && RUTAS[seccionAntigua]) {
+      irA(RUTAS[seccionAntigua], { replace: true })
+      return
+    }
+  
+    // Identificar la sección según la URL actual
+    const seccionActual = Object.entries(RUTAS).find(
+      ([, ruta]) => ruta === ubicacion.pathname
+    )?.[0]
+  
+    setSeccion(seccionActual || '¿Quiénes somos?')
+  }, [ubicacion.pathname, ubicacion.search, irA])
+
+  function navegar(destino) {
+    const ruta = destino.startsWith('/')
+      ? destino
+      : RUTAS[destino] || '/'
+  
+    irA(ruta)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -877,10 +920,7 @@ function renderCalendario() {
     <button
       type="button"
       className="boton-premios"
-      onClick={() => {
-        window.location.href =
-          `${window.location.pathname}?votar=${partido.id}`
-      }}
+      onClick={() => navegar(`/votar/${partido.id}`)}
     >
       ¡Votá! 🏆
     </button>
@@ -1261,7 +1301,7 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
         el código del grupo.
       </p>
 
-      <CargarPartido />
+      <CargarPartido navegar={navegar} />
     </section>
   )
   case 'Administración':

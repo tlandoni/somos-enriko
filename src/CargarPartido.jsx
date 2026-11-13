@@ -158,7 +158,7 @@ function SelectorEquipo({
   )
 }
 
-function CargarPartido() {
+function CargarPartido({ navegar }) {
   const [jugadores, setJugadores] = useState([])
   const [errorLista, setErrorLista] = useState(null)
 
@@ -391,9 +391,7 @@ function CargarPartido() {
           <button
             type="button"
             className="enlace"
-            onClick={() => {
-              window.location.href = `${window.location.pathname}?seccion=Historial`
-            }}
+            onClick={() => navegar('Historial')}
           >
             Ver el historial ↗
           </button>

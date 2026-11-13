@@ -24,7 +24,7 @@ const ACCESOS = [
     )
   
     function votar() {
-      window.location.href = `${window.location.pathname}?votar=${abierta.id}`
+      navegar(`/votar/${abierta.id}`)
     }
   
     let marcador = null

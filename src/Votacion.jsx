@@ -1,9 +1,10 @@
-
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from './lib/supabaseClient'
 import './Votacion.css'
 
 export default function Votacion({ partidoId }) {
+  const irA = useNavigate()
   const [detalle, setDetalle] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
@@ -193,9 +194,7 @@ export default function Votacion({ partidoId }) {
         <button
   type="button"
   className="votacion-volver"
-  onClick={() => {
-    window.location.href = window.location.pathname
-  }}
+  onClick={() => irA('/')}
 >
   ← Volver al sitio
 </button>
