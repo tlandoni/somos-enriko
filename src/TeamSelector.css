@@ -1,10 +1,11 @@
 .team-selector {
+  --ficha: 56px;
   color: #fff;
   margin: 24px 0;
 }
 
 .ts-encabezado {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .ts-etiqueta {
@@ -20,9 +21,497 @@
 }
 
 .ts-encabezado p,
-.ts-contador,
-.ts-nota {
+.ts-nota,
+.ts-ayuda-invitado {
   color: #c9c5d5;
+}
+
+.ts-error {
+  color: #ffb4b4;
+}
+
+/* Formato y esquema */
+
+.ts-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 16px;
+  background: #211832;
+  border: 1px solid #483461;
+  border-radius: 14px;
+}
+
+.ts-controles > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 170px;
+}
+
+.ts-controles label,
+.ts-form-invitado label,
+.ts-selector-etiqueta {
+  color: #e4d9f5;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.ts-controles select,
+.ts-form-invitado input,
+.ts-form-invitado select,
+.ts-barra-seleccion select {
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 11px 10px;
+  color: #fff;
+  background: #171020;
+  border: 1px solid #65517d;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.ts-controles select:focus,
+.ts-form-invitado input:focus,
+.ts-form-invitado select:focus,
+.ts-barra-seleccion select:focus,
+.ts-selector-caja:focus-within {
+  outline: 2px solid #c5a3ff;
+  outline-offset: 2px;
+}
+
+.ts-controles option,
+.ts-form-invitado option,
+.ts-barra-seleccion option {
+  color: #fff;
+  background: #211832;
+}
+
+.ts-contador-formato {
+  margin: 0 0 8px auto;
+  color: #c9c5d5;
+}
+
+.ts-mensaje {
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  color: #e6d5ff;
+  background: rgba(125, 76, 165, 0.18);
+  border: 1px solid rgba(190, 160, 235, 0.35);
+  border-radius: 10px;
+  line-height: 1.5;
+}
+
+/* Distribución: la cancha es la protagonista */
+
+.ts-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+  align-items: start;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.ts-columna-cancha {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.ts-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* Cancha */
+
+.ts-cancha {
+  --ficha: clamp(40px, 11cqw, 66px);
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  aspect-ratio: 68 / 105;
+  margin: 0 auto;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      #2f7a3d 0,
+      #2f7a3d 9.52%,
+      #36864a 9.52%,
+      #36864a 19.04%
+    );
+  border: 3px solid #d8b4fe;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.ts-lineas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.ts-cancha-rotulo {
+  position: absolute;
+  left: 50%;
+  padding: 2px 10px;
+  color: #fff;
+  background: rgba(8, 7, 13, 0.55);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.ts-rotulo-claros { top: 45%; }
+.ts-rotulo-oscuros { top: 53%; }
+
+.ts-pos {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: calc(var(--ficha) * 1.5);
+  transform: translate(-50%, -50%);
+}
+
+.ts-pos.ts-over .ts-pos-vacia,
+.ts-pos.ts-over .ts-ficha-circulo {
+  box-shadow: 0 0 0 4px #f4ce78;
+}
+
+.ts-pos-vacia {
+  display: grid;
+  place-items: center;
+  width: var(--ficha);
+  height: var(--ficha);
+  padding: 0;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(8, 7, 13, 0.25);
+  border: 2px dashed rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.ts-pos-vacia:hover {
+  background: rgba(8, 7, 13, 0.45);
+}
+
+/* Fichas */
+
+.ts-ficha {
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: grab;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.ts-ficha:active {
+  cursor: grabbing;
+}
+
+.ts-ficha:focus-visible {
+  outline: 2px solid #f4ce78;
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+.ts-arrastrando {
+  opacity: 0.3;
+}
+
+.ts-seleccionada .ts-ficha-circulo,
+.ts-seleccionada.ts-ficha-chip,
+.ts-seleccionada .ts-ficha-chip {
+  box-shadow: 0 0 0 3px #f4ce78;
+}
+
+.ts-ficha-campo {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+
+.ts-ficha-circulo {
+  display: grid;
+  place-items: center;
+  width: var(--ficha);
+  height: var(--ficha);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: calc(var(--ficha) * 0.3);
+  font-weight: 800;
+}
+
+.ts-ficha-nombre {
+  max-width: calc(var(--ficha) * 1.5);
+  padding: 1px 6px;
+  overflow: hidden;
+  color: #fff;
+  background: rgba(8, 7, 13, 0.7);
+  border-radius: 999px;
+  font-size: clamp(0.58rem, 2.4cqw, 0.74rem);
+  font-weight: 700;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ts-eq-claros .ts-ficha-circulo,
+.ts-ficha-chip.ts-eq-claros {
+  color: #302044;
+  background: #f4efff;
+  border-color: #c9b0f0;
+}
+
+.ts-eq-oscuros .ts-ficha-circulo,
+.ts-ficha-chip.ts-eq-oscuros {
+  color: #fff;
+  background: #17151b;
+  border-color: #a98bd6;
+}
+
+.ts-eq-libre .ts-ficha-circulo {
+  color: #fff;
+  background: #56318b;
+}
+
+.ts-pos-vacia.ts-eq-claros {
+  border-color: #f4efff;
+}
+
+.ts-overlay {
+  --ficha: 56px;
+  cursor: grabbing;
+}
+
+/* Sin asignar */
+
+.ts-sin-asignar {
+  padding: 14px;
+  background: #1b1725;
+  border: 1px dashed #65517d;
+  border-radius: 14px;
+}
+
+.ts-sin-asignar.ts-over {
+  border-color: #f4ce78;
+  background: #241d31;
+}
+
+.ts-sin-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.ts-sin-titulo h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.ts-sin-titulo span {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  background: #56318b;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.ts-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ts-ficha-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.ts-ficha-chip.ts-eq-libre {
+  color: #fff;
+  background: #342447;
+  border-color: #8860bd;
+}
+
+.ts-ficha-chip small {
+  opacity: 0.75;
+  font-size: 0.72rem;
+}
+
+.ts-vacio {
+  margin: 0;
+  padding: 8px 4px;
+  color: #aaa2b9;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* Barra de selección (alternativa al arrastre) */
+
+.ts-barra-seleccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(244, 206, 120, 0.12);
+  border: 1px solid rgba(244, 206, 120, 0.55);
+  border-radius: 12px;
+}
+
+.ts-barra-seleccion > span {
+  flex: 1 1 140px;
+}
+
+.ts-barra-seleccion select {
+  flex: 2 1 200px;
+}
+
+.ts-barra-seleccion .ts-reiniciar {
+  margin-top: 0;
+}
+
+/* Selector múltiple con búsqueda */
+
+.ts-selector {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  background: #211832;
+  border: 1px solid #483461;
+  border-radius: 14px;
+}
+
+.ts-selector-caja {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  background: #171020;
+  border: 1px solid #65517d;
+  border-radius: 10px;
+}
+
+.ts-selector-caja input {
+  flex: 1 1 120px;
+  min-width: 0;
+  padding: 6px;
+  color: #fff;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font: inherit;
+}
+
+.ts-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px 10px;
+  color: #fff;
+  background: #342447;
+  border: 1px solid #8860bd;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ts-tag-claros {
+  color: #302044;
+  background: #f4efff;
+}
+
+.ts-tag-oscuros {
+  background: #17151b;
+  border-color: #a98bd6;
+}
+
+.ts-tag button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.18);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.ts-selector-lista {
+  position: absolute;
+  top: calc(100% - 8px);
+  right: 16px;
+  left: 16px;
+  z-index: 20;
+  max-height: 260px;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+  background: #171020;
+  border: 1px solid #8860bd;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+}
+
+.ts-selector-lista li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ts-selector-lista li.ts-activo {
+  background: #342447;
+}
+
+.ts-selector-lista em {
+  color: #f4ce78;
+  font-size: 0.75rem;
+  font-style: normal;
+}
+
+.ts-selector-lista small {
+  color: #bdb3cc;
+  font-variant-numeric: tabular-nums;
+}
+
+.ts-selector-lista .ts-selector-aviso {
+  color: #aaa2b9;
+  cursor: default;
 }
 
 /* Alta de invitados */
@@ -31,8 +520,8 @@
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
   align-items: end;
-  gap: 12px;
-  padding: 18px;
+  gap: 10px;
+  padding: 16px;
   background: #211832;
   border: 1px solid #483461;
   border-radius: 14px;
@@ -45,262 +534,120 @@
   min-width: 0;
 }
 
-.ts-form-invitado label {
-  color: #e4d9f5;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
 .ts-form-invitado input,
 .ts-form-invitado select {
   width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  padding: 11px 10px;
-  color: #fff;
-  background: #171020;
-  border: 1px solid #65517d;
-  border-radius: 8px;
-  font: inherit;
-}
-
-.ts-form-invitado input:focus,
-.ts-form-invitado select:focus {
-  outline: 2px solid #c5a3ff;
-  outline-offset: 2px;
-}
-
-.ts-form-invitado option {
-  color: #fff;
-  background: #211832;
 }
 
 .ts-ayuda-invitado {
-  margin: 9px 2px 20px;
-  color: #aaa2b9;
+  margin: -6px 2px 0;
   font-size: 0.8rem;
   line-height: 1.5;
 }
 
-/* Columnas */
-
-.ts-equipos {
+.ts-invitados {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: start;
-  gap: 14px;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.ts-columna,
-.ts-resumen {
-  min-width: 0;
-  padding: 16px;
-  background: #211832;
-  border: 1px solid #483461;
-  border-radius: 14px;
-}
-
-.ts-columna.ts-disponibles {
-  background: #1b1725;
-  border-color: #51445f;
-}
-
-.ts-columna.ts-claros {
-  border-color: #8860bd;
-}
-
-.ts-columna.ts-oscuros {
-  border-color: #65517d;
-}
-
-.ts-columna-titulo {
+.ts-invitados li {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 14px;
-}
-
-.ts-columna-titulo h3 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.ts-columna-titulo > span {
-  display: grid;
-  place-items: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 5px;
-  color: #fff;
-  background: #56318b;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 800;
-}
-
-.ts-lista-jugadores {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-
-.ts-vacio {
-  padding: 18px 8px;
-  color: #aaa2b9;
-  font-size: 0.85rem;
-  text-align: center;
-}
-
-/* Tarjetas de jugadores */
-
-.ts-jugador {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  padding: 10px;
+  padding: 8px 12px;
+  color: #e4d9f5;
   background: #171020;
   border: 1px solid #49385f;
   border-radius: 10px;
+  font-size: 0.82rem;
 }
 
-.ts-claros .ts-jugador {
-  border-color: #70518f;
-}
-
-.ts-oscuros .ts-jugador {
-  border-color: #51445f;
-}
-
-.ts-jugador-info {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.ts-jugador-info strong {
-  overflow-wrap: anywhere;
-  font-size: 0.88rem;
-}
-
-.ts-jugador-info span {
-  color: #bdb3cc;
-  font-size: 0.72rem;
-}
-
-.ts-jugador-rating {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  flex-shrink: 0;
-  gap: 3px;
-}
-
-.ts-jugador-rating span {
-  color: #b9a1d7;
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
-.ts-jugador-rating strong {
-  color: #e6d5ff;
-  font-size: 0.9rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.ts-mover {
-  display: flex;
-  flex-shrink: 0;
-  gap: 3px;
-}
-
-.ts-mover button {
-  width: 27px;
-  height: 29px;
-  padding: 0;
-  color: #e9ddf7;
-  background: #342447;
-  border: 1px solid #65517d;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 800;
-}
-
-.ts-mover button:hover:not(:disabled) {
-  background: #7046a8;
-  border-color: #c5a3ff;
-}
-
-.ts-mover button:disabled {
-  opacity: 0.25;
-  cursor: not-allowed;
-}
-
-.ts-eliminar-invitado {
-  position: absolute;
-  top: -7px;
-  right: -7px;
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
+.ts-invitados button {
+  width: 26px;
+  height: 26px;
   padding: 0;
   color: #fff;
   background: #8c354f;
   border: 1px solid #d77b91;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 0.9rem;
-  line-height: 1;
 }
 
-.ts-eliminar-invitado:hover {
-  background: #b44361;
-}
-
-/* Promedios y resumen */
-
-.ts-promedio {
-  margin-top: 16px;
-  padding-top: 13px;
-  border-top: 1px solid #483461;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
+/* Balance */
 
 .ts-resumen {
-  margin-top: 18px;
+  padding: 16px;
+  background: #211832;
+  border: 1px solid #483461;
+  border-radius: 14px;
 }
 
 .ts-resumen h3 {
-  margin-top: 0;
+  margin: 0 0 12px;
 }
 
-.ts-contador {
-  font-size: 0.9rem;
+.ts-balance {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
 }
 
-.ts-mensaje {
+.ts-balance div {
+  padding: 9px 11px;
+  background: #171020;
+  border: 1px solid #49385f;
+  border-radius: 10px;
+}
+
+.ts-balance dt {
+  color: #b9a1d7;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ts-balance dd {
+  margin: 3px 0 0;
+  color: #e6d5ff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ts-veredicto {
+  margin: 12px 0 0;
   color: #d9c2ff;
+  font-weight: 700;
   line-height: 1.5;
+}
+
+.ts-nota {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
 }
 
 /* Botones */
 
+.ts-acciones {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
 .ts-reiniciar {
-  margin-top: 12px;
-  padding: 10px 16px;
+  padding: 11px 16px;
   color: #fff;
   background: #56318b;
   border: 1px solid #8860bd;
   border-radius: 8px;
   cursor: pointer;
+  font: inherit;
   font-weight: 700;
 }
 
@@ -318,21 +665,11 @@
   border-color: #65517d;
 }
 
-.ts-acciones {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.ts-error {
-  color: #ffb4b4;
-}
-
 /* Pronóstico */
 
 .ts-pronostico {
-  margin-top: 18px;
-  padding: 18px;
+  margin-top: 16px;
+  padding: 16px;
   background: #171020;
   border: 1px solid #8860bd;
   border-radius: 12px;
@@ -341,14 +678,19 @@
 
 .ts-pronostico span {
   color: #c5a3ff;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
 }
 
 .ts-pronostico h2 {
   margin: 12px 0;
-  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  font-size: clamp(1.4rem, 4vw, 2rem);
+}
+
+.ts-pronostico p {
+  margin: 0 0 10px;
 }
 
 .ts-pronostico small {
@@ -357,30 +699,22 @@
   line-height: 1.5;
 }
 
-/* Adaptación a pantallas chicas */
+/* Pantallas chicas: la cancha va primero y ocupa todo el ancho */
 
 @media (max-width: 900px) {
-  .ts-equipos {
-    grid-template-columns: 1fr 1fr;
+  .ts-layout {
+    grid-template-columns: 1fr;
   }
 
-  .ts-disponibles {
-    grid-column: 1 / -1;
+  .ts-contador-formato {
+    margin-left: 0;
   }
 }
 
 @media (max-width: 600px) {
-  .ts-equipos {
-    grid-template-columns: 1fr;
-  }
-
-  .ts-disponibles {
-    grid-column: auto;
-  }
-
-  .ts-columna,
-  .ts-resumen {
-    padding: 14px;
+  .ts-controles > div {
+    flex: 1 1 140px;
+    min-width: 0;
   }
 
   .ts-form-invitado {
@@ -389,24 +723,26 @@
 
   .ts-form-invitado .ts-reiniciar {
     width: 100%;
-    margin-top: 0;
   }
 
-  .ts-jugador {
-    padding: 11px;
+  .ts-cancha {
+    border-width: 2px;
+    border-radius: 12px;
   }
 
-  .ts-mover button {
-    width: 34px;
-    height: 34px;
+  .ts-selector-lista {
+    right: 8px;
+    left: 8px;
   }
 
-  .ts-acciones {
-    flex-direction: column;
+  .ts-balance {
+    grid-template-columns: 1fr 1fr;
   }
+}
 
-  .ts-acciones button {
-    width: 100%;
-    margin-top: 4px;
+@media (prefers-reduced-motion: reduce) {
+  .ts-ficha,
+  .ts-pos-vacia {
+    transition: none;
   }
 }
