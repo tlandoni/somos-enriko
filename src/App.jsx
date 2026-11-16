@@ -153,10 +153,11 @@ const resultados = await Promise.all([
       nullsFirst: false,
     }),
 
-  supabase
+      supabase
     .from('puntos_jugadores')
     .select('*')
     .order('puntos', { ascending: false })
+    .order('diferencia_gol', { ascending: false })
     .order('promedio_puntos', { ascending: false }),
 
   supabase
@@ -215,8 +216,8 @@ const resultados = await Promise.all([
       })
       
       setResumenPartidos(resultados[0].data || null)
-      setRanking(resultados[1].data || [])
-      setPuntosJugadores(resultados[2].data || [])
+        setRanking(resultados[1].data || [])
+        setPuntosJugadores(resultados[2].data || [])
       setDuplas(resultados[3].data || [])
       
       setPartidos(resultados[4].data || [])
@@ -550,25 +551,79 @@ function renderRankingIndividual(limite = ranking.length) {
       
         </table>
 
-<div className="criterios-tabla">
-  <strong>¿Cómo se calcula el rating?</strong>
-  <p>
-    El rating combina dos factores: el porcentaje de victorias y
-    la diferencia de gol promedio por partido. Ganar más seguido
-    y obtener mejores diferencias de gol contribuye a elevarlo.
-  </p>
-  <p>
-    Para que una muestra pequeña de partidos no pese demasiado,
-    el cálculo ajusta el rating hacia el promedio general de los
-    jugadores. Cuantos más partidos disputás, mayor es la influencia
-    de tu propio rendimiento.
-  </p>
-  <p>
-    <strong>Importante:</strong> es un indicador estadístico
-    comparativo, no una predicción exacta de cómo vas a jugar
-    en el próximo partido. Se consideran únicamente partidos oficiales.
-  </p>
+
+
+<div className="guia-estadisticas">
+  <div className="guia-encabezado">
+    <strong>¿Cómo leer tus estadísticas?</strong>
+    <span>Una guía para entender cada indicador</span>
+  </div>
+
+  <div className="guia-grid">
+
+    <div className="guia-modulo">
+      <span className="guia-numero">01</span>
+      <h4>Resultados</h4>
+      <p>
+        <strong>PJ:</strong> partidos jugados.
+        <strong> PG:</strong> ganados.
+        <strong> PE:</strong> empatados.
+        <strong> PP:</strong> perdidos.
+      </p>
+    </div>
+
+    <div className="guia-modulo">
+      <span className="guia-numero">02</span>
+      <h4>Rendimiento</h4>
+      <p>
+        <strong>% victorias:</strong> porcentaje de partidos ganados.
+      </p>
+      <p>
+        <strong>Dif. de gol:</strong> balance acumulado entre goles
+        a favor y en contra.
+      </p>
+      <p>
+        <strong>Dif. promedio:</strong> diferencia de gol por partido.
+      </p>
+    </div>
+
+    <div className="guia-modulo">
+      <span className="guia-numero">03</span>
+      <h4>Forma reciente 🌎</h4>
+      <p>
+        <strong>Mundial Personal:</strong> resultados de los últimos
+        7 partidos oficiales de cada jugador.
+      </p>
+      <p>
+        Es un indicador de actualidad, independiente del campeonato
+        histórico de la sección Nosotros.
+      </p>
+    </div>
+
+    <div className="guia-modulo">
+      <span className="guia-numero">04</span>
+      <h4>Rating</h4>
+      <p>
+        Combina porcentaje de victorias y diferencia de gol promedio.
+        Además, ajusta el resultado hacia el promedio general para
+        evitar que una muestra pequeña de partidos tenga demasiado peso.
+      </p>
+      <p>
+        Cuantos más partidos jugás, mayor influencia tiene tu propio
+        rendimiento.
+      </p>
+      <p>
+        Es un indicador comparativo, no una predicción de resultados.
+      </p>
+    </div>
+
+  </div>
+
+  <div className="guia-pie">
+    Todos los indicadores consideran exclusivamente partidos oficiales.
+  </div>
 </div>
+
 </div>
 )
 }
@@ -603,6 +658,7 @@ function renderTablaPuntos() {
             <th>PE</th>
             <th>PP</th>
             <th>Puntos</th>
+            <th>Dif. de gol</th>
             <th>Promedio</th>
           </tr>
         </thead>
@@ -616,9 +672,10 @@ function renderTablaPuntos() {
               <td>{numero(jugador.pe)}</td>
               <td>{numero(jugador.pp)}</td>
               <td className="dato-destacado">
-                {numero(jugador.puntos)}
-              </td>
-              <td>{numero(jugador.promedio_puntos, 2)}</td>
+            {numero(jugador.puntos)}
+          </td>
+          <td>{numero(jugador.diferencia_gol)}</td>
+          <td>{numero(jugador.promedio_puntos, 2)}</td>
             </tr>
           ))}
         </tbody>
