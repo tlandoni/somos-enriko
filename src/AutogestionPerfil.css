@@ -1,0 +1,165 @@
+
+.autogestion-perfil {
+  margin: 30px 0;
+  padding: 26px;
+  border: 1px solid rgba(190, 150, 255, 0.35);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(91, 43, 137, 0.32), rgba(30, 20, 43, 0.85));
+  color: #fff;
+}
+
+.autogestion-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.autogestion-cabecera h3 {
+  margin: 5px 0 8px;
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.5rem;
+}
+
+.autogestion-cabecera p:not(.etiqueta) {
+  max-width: 620px;
+  margin: 0;
+  color: #d8cce5;
+  line-height: 1.5;
+}
+
+.autogestion-acceso,
+.autogestion-vinculacion,
+.autogestion-formulario {
+  display: grid;
+  gap: 16px;
+  max-width: 680px;
+}
+
+.autogestion-perfil label,
+.autogestion-formulario fieldset {
+  display: grid;
+  gap: 8px;
+  color: #f4eafa;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.autogestion-perfil select,
+.autogestion-perfil input[type="text"] {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(210, 180, 245, 0.35);
+  border-radius: 10px;
+  background: #241832;
+  color: #fff;
+  font: inherit;
+}
+
+.autogestion-perfil select:focus,
+.autogestion-perfil input:focus {
+  outline: 2px solid #c9a5ef;
+  outline-offset: 2px;
+}
+
+.autogestion-perfil button {
+  width: fit-content;
+  min-height: 43px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #c9a5ef;
+  color: #261333;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.autogestion-perfil button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.autogestion-perfil .autogestion-salir,
+.autogestion-perfil .autogestion-secundario {
+  border: 1px solid rgba(210, 180, 245, 0.4);
+  background: transparent;
+  color: #eadcf8;
+}
+
+.autogestion-perfil .autogestion-salir {
+  min-height: 35px;
+  padding: 7px 13px;
+  font-size: 0.8rem;
+}
+
+.autogestion-identidad {
+  margin: 0;
+  color: #d8cce5;
+}
+
+.autogestion-identidad strong {
+  color: #fff;
+}
+
+.autogestion-formulario fieldset {
+  margin: 0;
+  padding: 15px;
+  border: 1px solid rgba(210, 180, 245, 0.3);
+  border-radius: 12px;
+}
+
+.autogestion-formulario legend {
+  padding: 0 7px;
+  color: #f4eafa;
+}
+
+.autogestion-posiciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.autogestion-posiciones label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 500;
+}
+
+.autogestion-posiciones input {
+  width: 17px;
+  height: 17px;
+  accent-color: #c9a5ef;
+}
+
+.autogestion-separador {
+  padding-top: 12px;
+  border-top: 1px solid rgba(210, 180, 245, 0.2);
+  color: #c9b8d9;
+  font-size: 0.85rem;
+}
+
+.autogestion-aviso,
+.autogestion-pendiente {
+  margin: 16px 0 0;
+  color: #e8d4ff;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .autogestion-perfil {
+    padding: 19px;
+  }
+
+  .autogestion-cabecera {
+    flex-direction: column;
+  }
+
+  .autogestion-posiciones {
+    grid-template-columns: 1fr;
+  }
+}

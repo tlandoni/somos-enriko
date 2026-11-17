@@ -9,6 +9,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import Admin from './Admin'
 import CargarPartido from './CargarPartido'
 import fotoEquipo from './assets/somos-enriko-equipo.jpg'
+import AutogestionPerfil from './AutogestionPerfil'
 
 const SECCIONES = [
   '¿Quiénes somos?',
@@ -1218,7 +1219,17 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
           </div>
         </div>
 
-        
+                <AutogestionPerfil
+          onPerfilGuardado={(jugadorId, perfil) => {
+            setJugadores((actuales) =>
+              actuales.map((jugador) =>
+                String(jugador.id) === String(jugadorId)
+                  ? { ...jugador, ...perfil }
+                  : jugador
+              )
+            )
+          }}
+        />
 
 <div className="integrantes-grid">
   {(() => {
