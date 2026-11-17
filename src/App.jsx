@@ -8,6 +8,7 @@ import Duplas from './Duplas'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Admin from './Admin'
 import CargarPartido from './CargarPartido'
+import fotoEquipo from './assets/somos-enriko-equipo.jpg'
 
 const SECCIONES = [
   '¿Quiénes somos?',
@@ -1196,8 +1197,15 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
       return <SinDatos>No hay integrantes registrados todavía.</SinDatos>
     }
 
-    return (
+        return (
       <>
+        <div className="nosotros-foto">
+          <img
+            src={fotoEquipo}
+            alt="El equipo de Somos Enriko reunido y abrazado en la cancha"
+          />
+        </div>
+
         <div className="comunidad-cabecera">
           <div>
             <p className="etiqueta">TODOS LOS ENRIKO</p>
@@ -1211,16 +1219,11 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
         </div>
 
         
+
 <div className="integrantes-grid">
-  {jugadores.map((jugador) => {
-    const ingreso = arbolJugadores.find(
-      (item) => item.jugador === jugador.nombre
-    )
-
-    const esFundador = ['Enrico', 'Hugo'].includes(jugador.nombre)
-
-    const insigniasJugador = insignias.filter(
-      (item) => String(item.jugador_id) === String(jugador.id)
+  {(() => {
+    const jugadoresActivos = jugadores.filter(
+      (jugador) => jugador['¿Está en el grupo de Whatsapp?'] === true
     )
 
     const conteoInvitados = arbolJugadores.reduce((conteo, item) => {
@@ -1234,15 +1237,6 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
     }, {})
 
     const maxInvitados = Math.max(0, ...Object.values(conteoInvitados))
-
-    const esPrincipalConstructor =
-      !esFundador &&
-      maxInvitados > 0 &&
-      (conteoInvitados[jugador.nombre] || 0) === maxInvitados
-
-    const campania = mundial.find(
-      (item) => String(item.jugador_id) === String(jugador.id)
-    )
 
     const emblemas = {
       '10Y_CAMPEON': {
@@ -1262,73 +1256,152 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
       },
     }
 
-    return (
-      <article className="integrante-card" key={jugador.id}>
-        <div className="integrante-iniciales" aria-hidden="true">
-          {(jugador.nombre || '?').trim().charAt(0).toUpperCase()}
-        </div>
+    return jugadoresActivos.map((jugador) => {
+      const ingreso = arbolJugadores.find(
+        (item) => item.jugador === jugador.nombre
+      )
 
-        <h3>{jugador.nombre}</h3>
+      const esFundador = ['Enrico', 'Hugo'].includes(jugador.nombre)
 
-        {esFundador ? (
-          <span className="integrante-logro">★ Fundador</span>
-        ) : (
-          <p className="integrante-ingreso">
-            Invitado por: {ingreso?.introducido_por || 'Sin información'}
-          </p>
-        )}
+      const insigniasJugador = insignias.filter(
+        (item) => String(item.jugador_id) === String(jugador.id)
+      )
 
-        {esPrincipalConstructor && (
-          <span className="integrante-logro integrante-constructor">
-            🏗️ Principal constructor
-          </span>
-        )}
+      const esPrincipalConstructor =
+        !esFundador &&
+        maxInvitados > 0 &&
+        (conteoInvitados[jugador.nombre] || 0) === maxInvitados
 
-<div className="integrante-mundial">
-  <p className="integrante-mundial-titulo">
-    🌎 Mundial Personal
-  </p>
+      const campania = mundial.find(
+        (item) => String(item.jugador_id) === String(jugador.id)
+      )
 
-  <span
-    className={`integrante-mundial-estado ${
-      campania?.es_campeon ? 'es-campeon' : ''
-    }`}
-  >
-    {!campania
-      ? 'Fase de grupos'
-      : campania.es_campeon
-        ? '🏆 Campeón del mundo'
-        : campania.mejor_historico}
-  </span>
-</div>
+      return (
+        <article className="integrante-card" key={jugador.id}>
+          <div className="integrante-identidad">
+            <div className="integrante-iniciales" aria-hidden="true">
+              {(jugador.nombre || '?').trim().charAt(0).toUpperCase()}
+            </div>
 
-        {insigniasJugador.length > 0 && (
-          <div className="integrante-insignias">
-            {insigniasJugador.map((insignia) => {
-              const emblema = emblemas[insignia.codigo] || {
-                icono: '🎖️',
-                nombre: insignia.codigo,
-                color: 'especial',
-              }
+            <div className="integrante-identidad-datos">
+              <h3>{jugador.nombre}</h3>
 
-              return (
-                <span
-                  className={`integrante-insignia insignia-${emblema.color}`}
-                  key={insignia.id}
-                  title={`${emblema.nombre}: ${insignia.descripcion}`}
-                  aria-label={`${emblema.nombre}: ${insignia.descripcion}`}
-                  role="img"
-                >
-                  {emblema.icono}
+              {esFundador ? (
+                <span className="integrante-logro">★ Fundador</span>
+              ) : (
+                <p className="integrante-ingreso">
+                  Invitado por: {ingreso?.introducido_por || 'Sin información'}
+                </p>
+              )}
+
+              {esPrincipalConstructor && (
+                <span className="integrante-logro integrante-constructor">
+                  🏗️ Principal constructor
                 </span>
-              )
-            })}
+              )}
+            </div>
           </div>
-        )}
-      </article>
-    )
-  })}
+
+          <div className="integrante-contenido">
+            {(jugador.perfil_tactico ||
+              jugador.zona_preferida ||
+              jugador.posiciones_habituales?.length > 0) && (
+              <div className="integrante-perfil">
+                <p className="integrante-perfil-titulo">PERFIL DE JUEGO</p>
+
+                {jugador.perfil_tactico && (
+                  <span
+                    className={`integrante-perfil-tactico perfil-${jugador.perfil_tactico}`}
+                  >
+                    {({
+                      ofensivo: '⚡ Ofensivo',
+                      defensivo: '🛡️ Defensivo',
+                      hibrido: '⚽ Híbrido',
+                    })[jugador.perfil_tactico] || jugador.perfil_tactico}
+                  </span>
+                )}
+
+                {jugador.zona_preferida && (
+                  <p className="integrante-perfil-zona">
+                    <span>Zona preferida</span>
+                    <strong>
+                      {({
+                        central: 'Central',
+                        lateral: 'Lateral',
+                        mixto: 'Mixto',
+                      })[jugador.zona_preferida] || jugador.zona_preferida}
+                    </strong>
+                  </p>
+                )}
+
+                {jugador.posiciones_habituales?.length > 0 && (
+                  <div className="integrante-posiciones">
+                    {jugador.posiciones_habituales.map((posicion) => (
+                      <span key={posicion}>{posicion}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          
+
+<div className="integrante-pie">
+  <div className="integrante-reconocimientos">
+    <p className="integrante-pie-titulo">RECONOCIMIENTOS</p>
+
+    <div className="integrante-insignias">
+      {insigniasJugador.length > 0 ? (
+        insigniasJugador.map((insignia) => {
+          const emblema = emblemas[insignia.codigo] || {
+            icono: '🎖️',
+            nombre: insignia.codigo,
+            color: 'especial',
+          }
+
+          return (
+            <span
+              className={`integrante-insignia insignia-${emblema.color}`}
+              key={insignia.id}
+              title={`${emblema.nombre}: ${insignia.descripcion}`}
+              aria-label={`${emblema.nombre}: ${insignia.descripcion}`}
+              role="img"
+            >
+              {emblema.icono}
+            </span>
+          )
+        })
+      ) : (
+        <span className="integrante-sin-insignias">
+          Sin insignias todavía
+        </span>
+      )}
+    </div>
+  </div>
+
+  <div className="integrante-mundial">
+    <p className="integrante-mundial-titulo">🌎 Mundial Personal</p>
+
+    <span
+      className={`integrante-mundial-estado ${
+        campania?.es_campeon ? 'es-campeon' : ''
+      }`}
+    >
+      {!campania
+        ? 'Fase de grupos'
+        : campania.es_campeon
+          ? '🏆 Campeón del mundo'
+          : campania.mejor_historico}
+    </span>
+  </div>
 </div>
+        </article>
+      )
+    })
+  })()}
+</div>
+
       </>
     )
   }
