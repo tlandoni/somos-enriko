@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './lib/supabaseClient'
 import './App.css'
 import Inicio from './Inicio'
 import TeamSelector from './TeamSelector'
 import Votacion from './Votacion'
 import Duplas from './Duplas'
-import { useLocation, useNavigate } from 'react-router-dom'
 import Admin from './Admin'
 import CargarPartido from './CargarPartido'
-import fotoEquipo from './assets/somos-enriko-equipo.jpg'
 import AutogestionPerfil from './AutogestionPerfil'
+import TarjetaJugador from './TarjetaJugador'
+import fotoEquipo from './assets/somos-enriko-equipo.jpg'
 
 const SECCIONES = [
   '¿Quiénes somos?',
@@ -21,6 +22,7 @@ const SECCIONES = [
   'Próximo sábado',
   'Nosotros',
 ]
+
 const RUTAS = {
   '¿Quiénes somos?': '/',
   'Historial': '/historial',
@@ -33,7 +35,6 @@ const RUTAS = {
   'Cargar partido': '/cargar',
   'Administración': '/admin',
 }
-
 
 function formatearFecha(fecha) {
   if (!fecha) return 'Fecha no disponible'
@@ -60,6 +61,34 @@ function numero(valor, decimales = 0) {
   })
 }
 
+function ordenarFilas(filas, orden, desempate = null) {
+  return [...filas].sort((a, b) => {
+    const valorA = a[orden.columna]
+    const valorB = b[orden.columna]
+
+    let comparacion = 0
+
+    if (valorA == null && valorB != null) return 1
+    if (valorA != null && valorB == null) return -1
+
+    if (typeof valorA === 'string' && typeof valorB === 'string') {
+      comparacion = valorA.localeCompare(valorB, 'es')
+    } else {
+      comparacion = Number(valorA ?? 0) - Number(valorB ?? 0)
+    }
+
+    if (comparacion !== 0) {
+      return orden.direccion === 'asc' ? comparacion : -comparacion
+    }
+
+    if (desempate) {
+      return desempate(b, a)
+    }
+
+    return 0
+  })
+}
+
 function ErrorDatos({ mensaje }) {
   return (
     <div className="estado-datos estado-error">
@@ -78,157 +107,140 @@ function SinDatos({ children }) {
   )
 }
 
-function TarjetaSeccion({ numero, titulo, descripcion, onClick }) {
-  return (
-    <button className="acceso-card" onClick={onClick}>
-      <span className="acceso-numero">{numero}</span>
-      <div>
-        <h3>{titulo}</h3>
-        <p>{descripcion}</p>
-      </div>
-      <span className="acceso-flecha" aria-hidden="true">↗</span>
-    </button>
-  )
-}
-
 function App() {
   const ubicacion = useLocation()
   const irA = useNavigate()
-  const parametrosURL = new URLSearchParams(ubicacion.search)
 
-  const [seccion, setSeccion] = useState(
-    parametrosURL.get('seccion') || '¿Quiénes somos?'
-  )
-  const coincidenciaVotacion = ubicacion.pathname.match(/^\/votar\/([^/]+)$/)
-  const partidoParaVotar = coincidenciaVotacion?.[1] || parametrosURL.get('votar')
+  /* Qué sección se muestra, según la dirección */
+
+  const rutaActual =
+    ubicacion.pathname.length > 1
+      ? ubicacion.pathname.replace(/\/+$/, '')
+      : ubicacion.pathname
+
+  const coincidenciaVotacion = rutaActual.match(/^\/votar\/([^/]+)$/)
+  const partidoParaVotar = coincidenciaVotacion?.[1] || null
+
+  const seccion =
+    Object.keys(RUTAS).find((nombre) => RUTAS[nombre] === rutaActual) ||
+    '¿Quiénes somos?'
+
+  /* Datos */
+
   const [ranking, setRanking] = useState([])
   const [puntosJugadores, setPuntosJugadores] = useState([])
   const [arbolJugadores, setArbolJugadores] = useState([])
   const [insignias, setInsignias] = useState([])
-  const [duplas, setDuplas] = useState([])
   const [partidos, setPartidos] = useState([])
-  const [resumenPartidos, setResumenPartidos] = useState(null)
   const [detallesVotacion, setDetallesVotacion] = useState({})
   const [jugadores, setJugadores] = useState([])
   const [mundial, setMundial] = useState([])
+  const [cargando, setCargando] = useState(true)
+  const [errores, setErrores] = useState({})
+
+  const [cargandoMundial, setCargandoMundial] = useState(true)
+  const [errorMundial, setErrorMundial] = useState(null)
+
   const [ordenRanking, setOrdenRanking] = useState({
     columna: 'diferencia_gol',
     direccion: 'desc',
   })
-  
-  const [ordenDuplas, setOrdenDuplas] = useState({
-    columna: 'indice_quimica',
-    direccion: 'desc',
-  })
-const [cargandoMundial, setCargandoMundial] = useState(true)
-const [errorMundial, setErrorMundial] = useState(null)
 
-const [mensajesMuro, setMensajesMuro] = useState([])
-const [cargandoMuro, setCargandoMuro] = useState(true)
-const [errorMuro, setErrorMuro] = useState(null)
-const [nombreMuro, setNombreMuro] = useState('')
-const [textoMuro, setTextoMuro] = useState('')
-const [categoriaMuro, setCategoriaMuro] = useState('Libre')
-const [publicandoMuro, setPublicandoMuro] = useState(false)
-const [avisoMuro, setAvisoMuro] = useState('')
-const [trampaMuro, setTrampaMuro] = useState('')   
-  const [cargando, setCargando] = useState(true)
-  const [errores, setErrores] = useState({})
-  
+  /* Muro */
+
+  const [mensajesMuro, setMensajesMuro] = useState([])
+  const [cargandoMuro, setCargandoMuro] = useState(true)
+  const [errorMuro, setErrorMuro] = useState(null)
+  const [nombreMuro, setNombreMuro] = useState('')
+  const [textoMuro, setTextoMuro] = useState('')
+  const [categoriaMuro, setCategoriaMuro] = useState('Libre')
+  const [publicandoMuro, setPublicandoMuro] = useState(false)
+  const [avisoMuro, setAvisoMuro] = useState('')
+  const [trampaMuro, setTrampaMuro] = useState('')
+
+  // Enlaces antiguos (?seccion=... y ?votar=...) hacia las rutas nuevas
+  useEffect(() => {
+    const parametros = new URLSearchParams(ubicacion.search)
+    const votar = parametros.get('votar')
+    const seccionAntigua = parametros.get('seccion')
+
+    if (votar) {
+      irA(`/votar/${votar}`, { replace: true })
+    } else if (seccionAntigua && RUTAS[seccionAntigua]) {
+      irA(RUTAS[seccionAntigua], { replace: true })
+    }
+  }, [ubicacion.search, irA])
+
   useEffect(() => {
     let activo = true
 
     async function cargarDatos() {
       setCargando(true)
 
-const resultados = await Promise.all([
-  supabase
-    .from('resumen_partidos')
-    .select('*')
-    .single(),
+      const resultados = await Promise.all([
+        supabase
+          .from('ranking_completo')
+          .select('*')
+          .order('porcentaje_victorias', {
+            ascending: false,
+            nullsFirst: false,
+          }),
 
-  supabase
-    .from('ranking_completo')
-    .select('*')
-    .order('porcentaje_victorias', {
-      ascending: false,
-      nullsFirst: false,
-    }),
+        supabase
+          .from('puntos_jugadores')
+          .select('*')
+          .order('puntos', { ascending: false })
+          .order('diferencia_gol', { ascending: false })
+          .order('promedio_puntos', { ascending: false }),
 
-      supabase
-    .from('puntos_jugadores')
-    .select('*')
-    .order('puntos', { ascending: false })
-    .order('diferencia_gol', { ascending: false })
-    .order('promedio_puntos', { ascending: false }),
+        supabase
+          .from('partidos')
+          .select(`
+            *,
+            participaciones (
+              equipo,
+              jugadores (nombre)
+            )
+          `)
+          .order('fecha', { ascending: false }),
 
-  supabase
-    .from('ranking_duplas')
-    .select('*')
-    .order('indice_quimica', {
-      ascending: false,
-      nullsFirst: false,
-    })
-    .limit(20),
+        supabase
+          .from('jugadores')
+          .select('*')
+          .order('nombre', { ascending: true }),
 
-    supabase
-    .from('partidos')
-    .select(`
-      *,
-      participaciones (
-        equipo,
-        jugadores (nombre)
-      )
-    `)
-    .order('fecha', { ascending: false }),
+        supabase.from('arbol_jugadores').select('*'),
 
-  supabase
-    .from('jugadores')
-    .select('*')
-    .order('nombre', { ascending: true }),
-
-  supabase
-    .from('arbol_jugadores')
-    .select('*'),
-
-  supabase
-    .from('insignias')
-    .select('*'),
-])
+        supabase.from('insignias').select('*'),
+      ])
 
       if (!activo) return
 
       const nombres = [
-        'resumenPartidos',
         'ranking',
         'puntosJugadores',
-        'duplas',
         'partidos',
         'jugadores',
         'arbolJugadores',
         'insignias',
       ]
-      
+
       const nuevosErrores = {}
-      
+
       resultados.forEach((resultado, indice) => {
         if (resultado.error) {
           nuevosErrores[nombres[indice]] = resultado.error.message
         }
       })
-      
-      setResumenPartidos(resultados[0].data || null)
-        setRanking(resultados[1].data || [])
-        setPuntosJugadores(resultados[2].data || [])
-      setDuplas(resultados[3].data || [])
-      
-      setPartidos(resultados[4].data || [])
-      setJugadores(resultados[5].data || [])
-      setArbolJugadores(resultados[6].data || [])
-      setInsignias(resultados[7].data || [])
+
+      setRanking(resultados[0].data || [])
+      setPuntosJugadores(resultados[1].data || [])
+      setPartidos(resultados[2].data || [])
+      setJugadores(resultados[3].data || [])
+      setArbolJugadores(resultados[4].data || [])
+      setInsignias(resultados[5].data || [])
       setErrores(nuevosErrores)
       setCargando(false)
-
     }
 
     cargarDatos()
@@ -237,26 +249,27 @@ const resultados = await Promise.all([
       activo = false
     }
   }, [])
+
   useEffect(() => {
     let activo = true
-  
+
     async function cargarDetallesVotacion() {
       if (!partidos.length) return
-  
+
       const { data, error } = await supabase.rpc('obtener_detalles_votacion')
-  
+
       if (!activo) return
-  
+
       if (error) {
         console.error('Error al cargar las votaciones:', error.message)
         return
       }
-  
+
       setDetallesVotacion(data || {})
     }
-  
+
     cargarDetallesVotacion()
-  
+
     return () => {
       activo = false
     }
@@ -264,35 +277,32 @@ const resultados = await Promise.all([
 
   useEffect(() => {
     let activo = true
-  
+
     async function cargarMundial() {
       setCargandoMundial(true)
       setErrorMundial(null)
-  
-      const { data, error } = await supabase.rpc(
-        'mundial_personal_estados'
-      )
-  
+
+      const { data, error } = await supabase.rpc('mundial_personal_estados')
+
       if (!activo) return
-  
+
       if (error) {
         setErrorMundial(error.message)
         setMundial([])
       } else {
         setMundial(data || [])
       }
-  
+
       setCargandoMundial(false)
     }
-  
+
     cargarMundial()
-  
+
     return () => {
       activo = false
     }
   }, [])
-  
-  
+
   useEffect(() => {
     let activo = true
 
@@ -332,9 +342,10 @@ const resultados = await Promise.all([
 
   async function publicarMensajeMuro(evento) {
     evento.preventDefault()
-    if (trampaMuro) return   // un bot completó el campo oculto
+    if (trampaMuro) return // un bot completó el campo oculto
+
     setAvisoMuro('')
-    evento.preventDefault()
+
     const nombre = nombreMuro.trim()
     const mensaje = textoMuro.trim()
 
@@ -372,362 +383,14 @@ const resultados = await Promise.all([
     setCategoriaMuro('Libre')
     setAvisoMuro('¡Pintada publicada! 💜')
   }
-  useEffect(() => {
-    const parametros = new URLSearchParams(ubicacion.search)
-  
-    // Compatibilidad con los enlaces antiguos de votación
-    const partidoAntiguo = parametros.get('votar')
-  
-    if (partidoAntiguo) {
-      irA(`/votar/${partidoAntiguo}`, { replace: true })
-      return
-    }
-  
-    // Las votaciones tienen su propia ruta
-    if (ubicacion.pathname.startsWith('/votar/')) {
-      return
-    }
-  
-    // Compatibilidad con los enlaces antiguos de secciones
-    const seccionAntigua = parametros.get('seccion')
-  
-    if (seccionAntigua && RUTAS[seccionAntigua]) {
-      irA(RUTAS[seccionAntigua], { replace: true })
-      return
-    }
-  
-    // Identificar la sección según la URL actual
-    const seccionActual = Object.entries(RUTAS).find(
-      ([, ruta]) => ruta === ubicacion.pathname
-    )?.[0]
-  
-    setSeccion(seccionActual || '¿Quiénes somos?')
-  }, [ubicacion.pathname, ubicacion.search, irA])
 
   function navegar(destino) {
-    const ruta = destino.startsWith('/')
-      ? destino
-      : RUTAS[destino] || '/'
-  
+    const ruta = destino.startsWith('/') ? destino : RUTAS[destino] || '/'
+
     irA(ruta)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  function irAEstadisticas() {
-    navegar('Estadísticas')
-  }
-
-  function irACalendario() {
-    navegar('Historial')
-  }
-
-  function irAExplorar() {
-     document.getElementById('explorar')?.scrollIntoView({
-       behavior: 'smooth',
-       block: 'start',
-     })
-  }
-  
-  function renderError(clave) {
-    if (!errores[clave]) return null
-    return <ErrorDatos mensaje={errores[clave]} />
-  }
-
-  
-function renderRankingIndividual(limite = ranking.length) {
-  if (errores.ranking) {
-    return renderError('ranking')
-  }
-
-  if (cargando) {
-    return <SinDatos>Cargando estadísticas…</SinDatos>
-  }
-
-  if (!ranking.length) {
-    return (
-      <SinDatos>
-        Todavía no hay jugadores con estadísticas disponibles en el ranking.
-      </SinDatos>
-    )
-  }
-
-  const rankingOrdenado = ordenarFilas(
-    ranking,
-    ordenRanking,
-    (a, b) => Number(b.pj ?? 0) - Number(a.pj ?? 0)
-  )
-
-  const columnas = [
-    { clave: 'nombre', titulo: 'Jugador', tipo: 'texto' },
-    { clave: 'pj', titulo: 'PJ' },
-    { clave: 'pg', titulo: 'PG' },
-    { clave: 'pe', titulo: 'PE' },
-    { clave: 'pp', titulo: 'PP' },
-    {
-      clave: 'porcentaje_victorias',
-      titulo: '% victorias',
-      formato: (j) => `${numero(j.porcentaje_victorias, 1)}%`,
-    },
-    { clave: 'diferencia_gol', titulo: 'Dif. de gol' },
-    {
-      clave: 'diferencia_gol_promedio',
-      titulo: 'Dif. promedio',
-      formato: (j) => numero(j.diferencia_gol_promedio, 2),
-    },
-    {
-      clave: 'rating',
-      titulo: 'Rating',
-      formato: (j) => numero(j.rating, 2),
-    },
-    {
-      clave: 'Mundial Personal 🌎',
-      titulo: 'Mundial Personal 🌎',
-      tipo: 'texto',
-      formato: (j) => j['Mundial Personal 🌎'] ?? '—',
-    },
-  ]
-
-  return (
-    <div className="tabla-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            {columnas.map((columna) => (
-              <th key={columna.clave}>
-                <button
-                  type="button"
-                  className="boton-orden-tabla"
-                  onClick={() =>
-                    cambiarOrden(
-                      ordenRanking,
-                      setOrdenRanking,
-                      columna.clave
-                    )
-                  }
-                >
-                  {columna.titulo}
-                  {ordenRanking.columna === columna.clave
-                    ? ordenRanking.direccion === 'desc'
-                      ? ' ↓'
-                      : ' ↑'
-                    : ''}
-                </button>
-              </th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {rankingOrdenado.slice(0, limite).map((jugador, indice) => (
-            <tr
-              key={
-                jugador.jugador_id ??
-                jugador.id ??
-                jugador.nombre
-              }
-            >
-              <td className="puesto">{indice + 1}</td>
-
-              {columnas.map((columna) => (
-                <td
-                  key={columna.clave}
-                  className={
-                    columna.clave === 'nombre'
-                      ? 'celda-nombre'
-                      : columna.clave === 'porcentaje_victorias'
-                        ? 'dato-destacado'
-                        : ''
-                  }
-                >
-                  {columna.formato
-                    ? columna.formato(jugador)
-                    : columna.tipo === 'texto'
-                      ? jugador[columna.clave] ?? '—'
-                      : numero(jugador[columna.clave])}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      
-        </table>
-
-
-
-<div className="guia-estadisticas">
-  <div className="guia-encabezado">
-    <strong>¿Cómo leer tus estadísticas?</strong>
-    <span>Una guía para entender cada indicador</span>
-  </div>
-
-  <div className="guia-grid">
-
-    <div className="guia-modulo">
-      <span className="guia-numero">01</span>
-      <h4>Resultados</h4>
-      <p>
-        <strong>PJ:</strong> partidos jugados.
-        <strong> PG:</strong> ganados.
-        <strong> PE:</strong> empatados.
-        <strong> PP:</strong> perdidos.
-      </p>
-    </div>
-
-    <div className="guia-modulo">
-      <span className="guia-numero">02</span>
-      <h4>Rendimiento</h4>
-      <p>
-        <strong>% victorias:</strong> porcentaje de partidos ganados.
-      </p>
-      <p>
-        <strong>Dif. de gol:</strong> balance acumulado entre goles
-        a favor y en contra.
-      </p>
-      <p>
-        <strong>Dif. promedio:</strong> diferencia de gol por partido.
-      </p>
-    </div>
-
-    <div className="guia-modulo">
-      <span className="guia-numero">03</span>
-      <h4>Forma reciente 🌎</h4>
-      <p>
-        <strong>Mundial Personal:</strong> resultados de los últimos
-        7 partidos oficiales de cada jugador.
-      </p>
-      <p>
-        Es un indicador de actualidad, independiente del campeonato
-        histórico de la sección Nosotros.
-      </p>
-    </div>
-
-    <div className="guia-modulo">
-      <span className="guia-numero">04</span>
-      <h4>Rating</h4>
-      <p>
-        Combina porcentaje de victorias y diferencia de gol promedio.
-        Además, ajusta el resultado hacia el promedio general para
-        evitar que una muestra pequeña de partidos tenga demasiado peso.
-      </p>
-      <p>
-        Cuantos más partidos jugás, mayor influencia tiene tu propio
-        rendimiento.
-      </p>
-      <p>
-        Es un indicador comparativo, no una predicción de resultados.
-      </p>
-    </div>
-
-  </div>
-
-  <div className="guia-pie">
-    Todos los indicadores consideran exclusivamente partidos oficiales.
-  </div>
-</div>
-
-</div>
-)
-}
-
-
-function renderTablaPuntos() {
-  if (errores.puntosJugadores) {
-    return (
-      <SinDatos>
-        No se pudieron cargar los puntos: {errores.puntosJugadores}
-      </SinDatos>
-    )
-  }
-
-  if (cargando) {
-    return <SinDatos>Cargando tabla de puntos…</SinDatos>
-  }
-
-  if (!puntosJugadores.length) {
-    return <SinDatos>Todavía no hay puntos para mostrar.</SinDatos>
-  }
-
-  return (
-    <div className="tabla-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Jugador</th>
-            <th>PJ</th>
-            <th>PG</th>
-            <th>PE</th>
-            <th>PP</th>
-            <th>Puntos</th>
-            <th>Dif. de gol</th>
-            <th>Promedio</th>
-          </tr>
-        </thead>
-        <tbody>
-          {puntosJugadores.map((jugador, indice) => (
-            <tr key={jugador.nombre}>
-              <td className="puesto">{indice + 1}</td>
-              <td className="celda-nombre">{jugador.nombre}</td>
-              <td>{numero(jugador.pj)}</td>
-              <td>{numero(jugador.pg)}</td>
-              <td>{numero(jugador.pe)}</td>
-              <td>{numero(jugador.pp)}</td>
-              <td className="dato-destacado">
-            {numero(jugador.puntos)}
-          </td>
-          <td>{numero(jugador.diferencia_gol)}</td>
-          <td>{numero(jugador.promedio_puntos, 2)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="criterios-tabla">
-        <strong>¿Cómo se puntúa?</strong>
-        <p>
-          Victoria: 4 puntos · Empate: 2 puntos · Derrota: 1 punto.
-        </p>
-        <p>
-          El promedio se calcula dividiendo los puntos acumulados
-          por los partidos jugados. Se consideran los partidos oficiales
-          de todo el historial.
-        </p>
-      </div>
-    </div>
-  )
-}
-
-  function ordenarFilas(filas, orden, desempate = null) {
-    return [...filas].sort((a, b) => {
-      const valorA = a[orden.columna]
-      const valorB = b[orden.columna]
-  
-      let comparacion = 0
-  
-      if (valorA == null && valorB != null) return 1
-      if (valorA != null && valorB == null) return -1
-  
-      if (typeof valorA === 'string' && typeof valorB === 'string') {
-        comparacion = valorA.localeCompare(valorB, 'es')
-      } else {
-        comparacion = Number(valorA ?? 0) - Number(valorB ?? 0)
-      }
-  
-      if (comparacion !== 0) {
-        return orden.direccion === 'asc'
-          ? comparacion
-          : -comparacion
-      }
-  
-      if (desempate) {
-        return desempate(b, a)
-      }
-  
-      return 0
-    })
-  }
-  
   function cambiarOrden(orden, setOrden, columna) {
     setOrden((actual) => ({
       columna,
@@ -737,456 +400,600 @@ function renderTablaPuntos() {
           : 'desc',
     }))
   }
-  function renderRankingDuplas(limite = duplas.length) {
-    if (errores.duplas) {
-      return renderError('duplas')
+
+  function renderError(clave) {
+    if (!errores[clave]) return null
+    return <ErrorDatos mensaje={errores[clave]} />
+  }
+
+  /* Estadísticas */
+
+  function renderRankingIndividual(limite = ranking.length) {
+    if (errores.ranking) {
+      return renderError('ranking')
     }
 
     if (cargando) {
-      return <SinDatos>Cargando estadísticas de las duplas…</SinDatos>
+      return <SinDatos>Cargando estadísticas…</SinDatos>
     }
 
-    if (!duplas.length) {
+    if (!ranking.length) {
       return (
         <SinDatos>
-          Todavía no hay duplas con estadísticas disponibles.
+          Todavía no hay jugadores con estadísticas disponibles en el ranking.
+        </SinDatos>
+      )
+    }
+
+    const rankingOrdenado = ordenarFilas(
+      ranking,
+      ordenRanking,
+      (a, b) => Number(b.pj ?? 0) - Number(a.pj ?? 0)
+    )
+
+    const columnas = [
+      { clave: 'nombre', titulo: 'Jugador', tipo: 'texto' },
+      { clave: 'pj', titulo: 'PJ' },
+      { clave: 'pg', titulo: 'PG' },
+      { clave: 'pe', titulo: 'PE' },
+      { clave: 'pp', titulo: 'PP' },
+      {
+        clave: 'porcentaje_victorias',
+        titulo: '% victorias',
+        formato: (j) => `${numero(j.porcentaje_victorias, 1)}%`,
+      },
+      { clave: 'diferencia_gol', titulo: 'Dif. de gol' },
+      {
+        clave: 'diferencia_gol_promedio',
+        titulo: 'Dif. promedio',
+        formato: (j) => numero(j.diferencia_gol_promedio, 2),
+      },
+      {
+        clave: 'rating',
+        titulo: 'Rating',
+        formato: (j) => numero(j.rating, 2),
+      },
+      {
+        clave: 'Mundial Personal 🌎',
+        titulo: 'Mundial Personal 🌎',
+        tipo: 'texto',
+        formato: (j) => j['Mundial Personal 🌎'] ?? '—',
+      },
+    ]
+
+    return (
+      <>
+        <div className="tabla-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                {columnas.map((columna) => (
+                  <th key={columna.clave}>
+                    <button
+                      type="button"
+                      className="boton-orden-tabla"
+                      onClick={() =>
+                        cambiarOrden(ordenRanking, setOrdenRanking, columna.clave)
+                      }
+                    >
+                      {columna.titulo}
+                      {ordenRanking.columna === columna.clave
+                        ? ordenRanking.direccion === 'desc'
+                          ? ' ↓'
+                          : ' ↑'
+                        : ''}
+                    </button>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {rankingOrdenado.slice(0, limite).map((jugador, indice) => (
+                <tr key={jugador.jugador_id ?? jugador.id ?? jugador.nombre}>
+                  <td className="puesto">{indice + 1}</td>
+
+                  {columnas.map((columna) => (
+                    <td
+                      key={columna.clave}
+                      className={
+                        columna.clave === 'nombre'
+                          ? 'celda-nombre'
+                          : columna.clave === 'porcentaje_victorias'
+                            ? 'dato-destacado'
+                            : ''
+                      }
+                    >
+                      {columna.formato
+                        ? columna.formato(jugador)
+                        : columna.tipo === 'texto'
+                          ? jugador[columna.clave] ?? '—'
+                          : numero(jugador[columna.clave])}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="guia-estadisticas">
+          <div className="guia-encabezado">
+            <strong>¿Cómo leer tus estadísticas?</strong>
+            <span>Una guía para entender cada indicador</span>
+          </div>
+
+          <div className="guia-grid">
+            <div className="guia-modulo">
+              <span className="guia-numero">01</span>
+              <h4>Resultados</h4>
+              <p>
+                <strong>PJ:</strong> partidos jugados.
+                <strong> PG:</strong> ganados.
+                <strong> PE:</strong> empatados.
+                <strong> PP:</strong> perdidos.
+              </p>
+            </div>
+
+            <div className="guia-modulo">
+              <span className="guia-numero">02</span>
+              <h4>Rendimiento</h4>
+              <p>
+                <strong>% victorias:</strong> porcentaje de partidos ganados.
+              </p>
+              <p>
+                <strong>Dif. de gol:</strong> balance acumulado entre goles
+                a favor y en contra.
+              </p>
+              <p>
+                <strong>Dif. promedio:</strong> diferencia de gol por partido.
+              </p>
+            </div>
+
+            <div className="guia-modulo">
+              <span className="guia-numero">03</span>
+              <h4>Forma reciente 🌎</h4>
+              <p>
+                <strong>Mundial Personal:</strong> resultados de los últimos
+                7 partidos oficiales de cada jugador.
+              </p>
+              <p>
+                Es un indicador de actualidad, independiente del campeonato
+                histórico de la sección Nosotros.
+              </p>
+            </div>
+
+            <div className="guia-modulo">
+              <span className="guia-numero">04</span>
+              <h4>Rating</h4>
+              <p>
+                Combina porcentaje de victorias y diferencia de gol promedio.
+                Además, ajusta el resultado hacia el promedio general para
+                evitar que una muestra pequeña de partidos tenga demasiado peso.
+              </p>
+              <p>
+                Cuantos más partidos jugás, mayor influencia tiene tu propio
+                rendimiento.
+              </p>
+              <p>
+                Es un indicador comparativo, no una predicción de resultados.
+              </p>
+            </div>
+          </div>
+
+          <div className="guia-pie">
+            Todos los indicadores consideran exclusivamente partidos oficiales.
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  function renderTablaPuntos() {
+    if (errores.puntosJugadores) {
+      return (
+        <SinDatos>
+          No se pudieron cargar los puntos: {errores.puntosJugadores}
+        </SinDatos>
+      )
+    }
+
+    if (cargando) {
+      return <SinDatos>Cargando tabla de puntos…</SinDatos>
+    }
+
+    if (!puntosJugadores.length) {
+      return <SinDatos>Todavía no hay puntos para mostrar.</SinDatos>
+    }
+
+    return (
+      <>
+        <div className="tabla-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Jugador</th>
+                <th>PJ</th>
+                <th>PG</th>
+                <th>PE</th>
+                <th>PP</th>
+                <th>Puntos</th>
+                <th>Dif. de gol</th>
+                <th>Promedio</th>
+              </tr>
+            </thead>
+            <tbody>
+              {puntosJugadores.map((jugador, indice) => (
+                <tr key={jugador.nombre}>
+                  <td className="puesto">{indice + 1}</td>
+                  <td className="celda-nombre">{jugador.nombre}</td>
+                  <td>{numero(jugador.pj)}</td>
+                  <td>{numero(jugador.pg)}</td>
+                  <td>{numero(jugador.pe)}</td>
+                  <td>{numero(jugador.pp)}</td>
+                  <td className="dato-destacado">{numero(jugador.puntos)}</td>
+                  <td>{numero(jugador.diferencia_gol)}</td>
+                  <td>{numero(jugador.promedio_puntos, 2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="criterios-tabla">
+          <strong>¿Cómo se puntúa?</strong>
+          <p>Victoria: 4 puntos · Empate: 2 puntos · Derrota: 1 punto.</p>
+          <p>
+            El promedio se calcula dividiendo los puntos acumulados
+            por los partidos jugados. Se consideran los partidos oficiales
+            de todo el historial.
+          </p>
+        </div>
+      </>
+    )
+  }
+
+  /* Historial */
+
+  function renderCalendario() {
+    if (errores.partidos) return renderError('partidos')
+
+    if (cargando) {
+      return <SinDatos>Cargando historial…</SinDatos>
+    }
+
+    if (!partidos.length) {
+      return (
+        <SinDatos>
+          Todavía no hay partidos registrados en el historial.
         </SinDatos>
       )
     }
 
     return (
-      <div className="tabla-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Dupla</th>
-              <th>PJ juntos</th>
-              <th>PG juntos</th>
-              <th>% victorias</th>
-              <th>Dif. de gol</th>
-              <th>Dif. promedio</th>
-              <th>Índice de química</th>
-              <th>Índice de sinergia</th>
-            </tr>
-          </thead>
+      <div className="partidos-lista">
+        {partidos.map((partido) => {
+          const claros = partido.goles_claros
+          const oscuros = partido.goles_oscuros
 
-          <tbody>
-            {duplas.slice(0, limite).map((dupla, indice) => {
-              const nombreDupla =
-                dupla.jugador_1 && dupla.jugador_2
-                  ? `${dupla.jugador_1} + ${dupla.jugador_2}`
-                  : dupla.dupla ?? 'Dupla'
+          const tieneResultado =
+            claros !== null &&
+            claros !== undefined &&
+            oscuros !== null &&
+            oscuros !== undefined
 
-              const porcentaje =
-                dupla.porcentaje_victorias ??
-                (
-                  Number(dupla.pj_juntos) > 0
-                    ? 100 * Number(dupla.pg_juntos) /
-                      Number(dupla.pj_juntos)
-                    : null
-                )
+          const participaciones = partido.participaciones || []
 
-              return (
-                <tr
-                  key={
-                    dupla.jugador_1_id && dupla.jugador_2_id
-                      ? `${dupla.jugador_1_id}-${dupla.jugador_2_id}`
-                      : nombreDupla
-                  }
-                >
-                  <td className="puesto">{indice + 1}</td>
-                  <td className="celda-nombre">{nombreDupla}</td>
-                  <td>{numero(dupla.pj_juntos)}</td>
-                  <td>{numero(dupla.pg_juntos)}</td>
-                  <td className="dato-destacado">
-                    {numero(porcentaje, 1)}%
-                  </td>
-                  <td>{numero(dupla.diferencia_gol_juntos)}</td>
-                  <td>{numero(dupla.diferencia_gol_promedio, 2)}</td>
-                  
-                  <td className="quimica">
-                 {numero(dupla.indice_quimica, 2)}
-                </td>
-                  <td className="quimica">
-                  {numero(dupla.indice_sinergia, 2)}
-                  </td>
+          const nombresDe = (equipo) =>
+            participaciones
+              .filter((p) => p.equipo === equipo)
+              .map((p) => p.jugadores?.nombre)
+              .filter(Boolean)
+              .sort((a, b) => a.localeCompare(b, 'es'))
 
-                </tr>
-              )
-            })}
-          </tbody>
-        
-          </table>
+          const jugadoresClaros = nombresDe('Claros')
+          const jugadoresOscuros = nombresDe('Oscuros')
 
-<div className="criterios-tabla">
-  <strong>¿Cómo se evalúan las duplas?</strong>
-  <p>
-    <strong>Índice de química:</strong> combina el porcentaje
-    de victorias compartidas con la cantidad de partidos jugados
-    juntos. Una dupla que gana con frecuencia y tiene más partidos
-    en común obtiene un índice mayor.
-  </p>
-  <p>
-    <strong>Índice de sinergia:</strong> parte del índice de química
-    y suma la diferencia de gol promedio de la dupla, multiplicada
-    por 5. Así incorpora no solo cuántas veces gana, sino también
-    por cuánto suele ganar o perder.
-  </p>
-  <p>
-    Ambos indicadores se calculan con partidos oficiales.
-    Son referencias estadísticas: no garantizan que una dupla
-    vaya a repetir esos resultados en el próximo partido.
-  </p>
-</div>
-</div>
-)
-}
-
-
-
-  
-  
-function renderCalendario() {
-  if (errores.partidos) return renderError('partidos')
-
-  if (cargando) {
-    return <SinDatos>Cargando historial…</SinDatos>
-  }
-
-  if (!partidos.length) {
-    return (
-      <SinDatos>
-        Todavía no hay partidos registrados en el historial.
-      </SinDatos>
-    )
-  }
-
-  return (
-    <div className="partidos-lista">
-      {partidos.map((partido) => {
-        const claros = partido.goles_claros
-        const oscuros = partido.goles_oscuros
-
-        const tieneResultado =
-          claros !== null &&
-          claros !== undefined &&
-          oscuros !== null &&
-          oscuros !== undefined
-
-        const participaciones = partido.participaciones || []
-
-        const jugadoresClaros = participaciones
-          .filter((p) => p.equipo === 'Claros')
-          .map((p) => p.jugadores?.nombre)
-          .filter(Boolean)
-          .sort((a, b) => a.localeCompare(b, 'es'))
-
-        const jugadoresOscuros = participaciones
-          .filter((p) => p.equipo === 'Oscuros')
-          .map((p) => p.jugadores?.nombre)
-          .filter(Boolean)
-          .sort((a, b) => a.localeCompare(b, 'es'))
           const detalleVotacion = detallesVotacion[partido.id]
-
           const premioTono = detalleVotacion?.premio_tono || []
           const golesFecha = detalleVotacion?.goles_fecha || []
-          
+
           const maxVotosTono = Math.max(
             0,
             ...premioTono.map((item) => Number(item.votos || 0))
           )
-          
           const maxVotosGol = Math.max(
             0,
             ...golesFecha.map((item) => Number(item.votos || 0))
           )
-          
+
           const ganadoresTono = premioTono.filter(
             (item) => Number(item.votos || 0) === maxVotosTono && maxVotosTono > 0
           )
-          
           const ganadoresGol = golesFecha.filter(
             (item) => Number(item.votos || 0) === maxVotosGol && maxVotosGol > 0
           )
-          
-          const votacionAbierta = detalleVotacion?.estado === 'abierta'
-        return (
-          <article className="partido-card" key={partido.id}>
-            <div className="partido-fecha">
-              <span className="mini-etiqueta">FECHA</span>
-              <strong>{formatearFecha(partido.fecha)}</strong>
-            </div>
-
-            <div className="partido-info">
-              <span className="tipo-partido">
-                {partido.tipo_partido || 'Partido'}
-              </span>
-
-              <div className="partido-marcador">
-  {tieneResultado ? (
-    <>
-      <div className="marcador-equipo marcador-claros">
-        <span>◇ CLAROS</span>
-        <strong>{claros}</strong>
-        <small>GOLES</small>
-      </div>
-
-      <span className="marcador-separador">—</span>
-
-      <div className="marcador-equipo marcador-oscuros">
-        <span>⚫ OSCUROS</span>
-        <strong>{oscuros}</strong>
-        <small>GOLES</small>
-      </div>
-    </>
-  ) : (
-    <h3>Claros <span>vs.</span> Oscuros</h3>
-  )}
-</div>
-
-              <div className="partido-equipos">
-                <div className="partido-equipo equipo-claros">
-                <strong>◇ Claros</strong>
-                  {jugadoresClaros.length > 0 ? (
-                    <p>{jugadoresClaros.join(' · ')}</p>
-                  ) : (
-                    <p className="sin-jugadores">Sin jugadores registrados</p>
-                  )}
-                </div>
-
-                <div className="partido-equipo equipo-oscuros">
-                  <strong>⚫ Oscuros</strong>
-                  {jugadoresOscuros.length > 0 ? (
-                    <p>{jugadoresOscuros.join(' · ')}</p>
-                  ) : (
-                    <p className="sin-jugadores">Sin jugadores registrados</p>
-                  )}
-                </div>
-              </div>
-
-              {partido.observaciones && (
-                <p>{partido.observaciones}</p>
-              )}
-            </div>
-
-            <div className="partido-resultado">
-  {!tieneResultado && (
-    <span className="sin-resultado">Sin resultado</span>
-  )}
-
-  {detalleVotacion?.estado === 'abierta' && (
-    <button
-      type="button"
-      className="boton-premios"
-      onClick={() => navegar(`/votar/${partido.id}`)}
-    >
-      ¡Votá! 🏆
-    </button>
-  )}
-
-  {detalleVotacion?.estado === 'cerrada' && (
-    <div className="partido-premiados">
-    {ganadoresTono.length > 0 && (
-      <div className="premio-item">
-        <strong>🏅 Premio Toño</strong>
-        <div className="premio-ganadores">
-          {ganadoresTono.map((item) => (
-            <span key={item.jugador_id}>
-              {item.nombre}
-              <small>{item.votos} votos</small>
-            </span>
-          ))}
-        </div>
-      </div>
-    )}
-  
-    {ganadoresGol.length > 0 && (
-      <div className="premio-item">
-        <strong>⚽ Mejor gol</strong>
-        <div className="premio-ganadores">
-          {ganadoresGol.map((item) => (
-            <span key={item.gol_id}>
-              <span className="premio-descripcion">
-                {item.descripcion}
-              </span>
-              <small>
-                {item.nombre_autor_gol || 'Autor no registrado'}
-                {' · '}
-                {item.votos} votos
-              </small>
-            </span>
-          ))}
-        </div>
-      </div>
-    )}
-  </div>
-  )}
-</div>
-</article>
-)
-})}
-</div>
-)
-}
-
-function renderMundialPersonal() {
-  if (cargandoMundial) {
-    return <SinDatos>Calculando las campañas mundialistas…</SinDatos>
-  }
-
-  if (errorMundial) {
-    return (
-      <ErrorDatos
-        mensaje={`No pudimos cargar el Mundial Personal: ${errorMundial}`}
-      />
-    )
-  }
-
-  if (!mundial.length) {
-    return <SinDatos>No hay jugadores para mostrar.</SinDatos>
-  }
-
-  const ordenEstados = {
-    'Campeón del mundo': 7,
-    'Final': 6,
-    'Partido por el tercer puesto': 5,
-    'Semifinal': 4,
-    'Cuartos de final': 3,
-    'Octavos de final': 2,
-    'Fase de grupos': 1,
-  }
-
-  const jugadoresOrdenados = [...mundial].sort((a, b) => {
-    if (a.es_campeon !== b.es_campeon) {
-      return a.es_campeon ? -1 : 1
-    }
-
-    const rangoA = ordenEstados[a.estado_actual] || 0
-    const rangoB = ordenEstados[b.estado_actual] || 0
-
-    return rangoB - rangoA || a.nombre.localeCompare(b.nombre, 'es')
-  })
-
-  const simbolosResultado = {
-    G: { simbolo: '✓', etiqueta: 'Victoria', clase: 'mundial-victoria' },
-    E: { simbolo: '🤝', etiqueta: 'Empate', clase: 'mundial-empate' },
-    P: { simbolo: '✕', etiqueta: 'Derrota', clase: 'mundial-derrota' },
-  }
-
-  return (
-    <div className="mundial-contenido">
-      <div className="mundial-intro">
-        <span className="mini-etiqueta">CADA PARTIDO CUENTA</span>
-        <h2>El camino a la gloria.</h2>
-        <p>
-          Cada jugador disputa su propio Mundial. La campaña actual
-          puede cambiar; la gloria conquistada queda para siempre.
-        </p>
-      </div>
-
-      <div className="mundial-diego">
-        <img
-          src="/images/maradona-silueta.png"
-          alt="Silueta de Diego Maradona"
-          className="mundial-diego-imagen"
-        />
-        <div className="mundial-diego-texto">
-          <span className="mundial-diego-etiqueta">
-            EL SUEÑO DE TODO ENRIKO
-          </span>
-          <p>
-            Siete partidos. Una consagración. La gloria eterna.
-          </p>
-        </div>
-      </div>
-
-      <div className="mundial-grid">
-        {jugadoresOrdenados.map((jugador) => {
-          const recorrido = (jugador.recorrido_actual || '')
-          .trim()
-          .split(/\s+/)
-          .filter(resultado => simbolosResultado[resultado])
-          .reverse()
 
           return (
-            <article
-              className={`mundial-card ${jugador.es_campeon ? 'mundial-campeon' : ''}`}
-              key={jugador.jugador_id}
-            >
-              <div className="mundial-card-cabecera">
-                <span className="mundial-avatar">
-                  {(jugador.nombre || '?').trim().charAt(0).toUpperCase()}
+            <article className="partido-card" key={partido.id}>
+              <div className="partido-fecha">
+                <span className="mini-etiqueta">FECHA</span>
+                <strong>{formatearFecha(partido.fecha)}</strong>
+              </div>
+
+              <div className="partido-info">
+                <span className="tipo-partido">
+                  {partido.tipo_partido || 'Partido'}
                 </span>
 
-                <div className="mundial-identidad">
-                  <h3>{jugador.nombre}</h3>
-                  <span>
-                    {jugador.partidos_oficiales} partidos oficiales
-                  </span>
+                <div className="partido-marcador">
+                  {tieneResultado ? (
+                    <>
+                      <div className="marcador-equipo marcador-claros">
+                        <span>◇ CLAROS</span>
+                        <strong>{claros}</strong>
+                        <small>GOLES</small>
+                      </div>
+
+                      <span className="marcador-separador">—</span>
+
+                      <div className="marcador-equipo marcador-oscuros">
+                        <span>⚫ OSCUROS</span>
+                        <strong>{oscuros}</strong>
+                        <small>GOLES</small>
+                      </div>
+                    </>
+                  ) : (
+                    <h3>Claros <span>vs.</span> Oscuros</h3>
+                  )}
                 </div>
 
-                {jugador.es_campeon && (
-                  <span className="mundial-corona" title="Campeón histórico">
-                    🏆
-                  </span>
-                )}
-              </div>
-
-              <div className="mundial-dato">
-                <span className="mini-etiqueta">ESTADO ACTUAL</span>
-                <strong>{jugador.estado_actual}</strong>
-              </div>
-
-              <div className="mundial-dato mundial-recorrido">
-                <span className="mini-etiqueta">CAMPAÑA ACTUAL</span>
-
-                {recorrido.length > 0 ? (
-                  <div className="mundial-resultados">
-                    {recorrido.map((resultado, indice) => {
-                      const dato = simbolosResultado[resultado]
-
-                      return (
-                        <span
-                          key={`${jugador.jugador_id}-${indice}`}
-                          className={`mundial-resultado ${dato.clase}`}
-                          title={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${dato.etiqueta}`}
-aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${dato.etiqueta}`}
-                        >
-                          {dato.simbolo}
-                        </span>
-                      )
-                    })}
+                <div className="partido-equipos">
+                  <div className="partido-equipo equipo-claros">
+                    <strong>◇ Claros</strong>
+                    {jugadoresClaros.length > 0 ? (
+                      <p>{jugadoresClaros.join(' · ')}</p>
+                    ) : (
+                      <p className="sin-jugadores">Sin jugadores registrados</p>
+                    )}
                   </div>
-                ) : (
-                  <span className="mundial-sin-recorrido">
-                    Le faltan partidos
-                  </span>
-                )}
+
+                  <div className="partido-equipo equipo-oscuros">
+                    <strong>⚫ Oscuros</strong>
+                    {jugadoresOscuros.length > 0 ? (
+                      <p>{jugadoresOscuros.join(' · ')}</p>
+                    ) : (
+                      <p className="sin-jugadores">Sin jugadores registrados</p>
+                    )}
+                  </div>
+                </div>
+
+                {partido.observaciones && <p>{partido.observaciones}</p>}
               </div>
 
-              <div className="mundial-dato mundial-historico">
-                <span className="mini-etiqueta">
-                  {jugador.es_campeon ? 'GLORIA ETERNA' : 'MEJOR HISTÓRICO'}
-                </span>
+              <div className="partido-resultado">
+                {!tieneResultado && (
+                  <span className="sin-resultado">Sin resultado</span>
+                )}
 
-                <strong>
-                  {jugador.es_campeon
-                    ? '🏆 Campeón del mundo'
-                    : (!jugador.mejor_historico ||
-                        jugador.mejor_historico === 'Sin clasificar')
-                      ? 'Fase de grupos'
-                      : jugador.mejor_historico}
-                </strong>
+                {detalleVotacion?.estado === 'abierta' && (
+                  <button
+                    type="button"
+                    className="boton-premios"
+                    onClick={() => navegar(`/votar/${partido.id}`)}
+                  >
+                    ¡Votá! 🏆
+                  </button>
+                )}
+
+                {detalleVotacion?.estado === 'cerrada' && (
+                  <div className="partido-premiados">
+                    {ganadoresTono.length > 0 && (
+                      <div className="premio-item">
+                        <strong>🏅 Premio Toño</strong>
+                        <div className="premio-ganadores">
+                          {ganadoresTono.map((item) => (
+                            <span key={item.jugador_id}>
+                              {item.nombre}
+                              <small>{item.votos} votos</small>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {ganadoresGol.length > 0 && (
+                      <div className="premio-item">
+                        <strong>⚽ Mejor gol</strong>
+                        <div className="premio-ganadores">
+                          {ganadoresGol.map((item) => (
+                            <span key={item.gol_id}>
+                              <span className="premio-descripcion">
+                                {item.descripcion}
+                              </span>
+                              <small>
+                                {item.nombre_autor_gol || 'Autor no registrado'}
+                                {' · '}
+                                {item.votos} votos
+                              </small>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </article>
           )
         })}
       </div>
-    </div>
-  )
-}
-  
+    )
+  }
+
+  /* Mundial Personal */
+
+  function renderMundialPersonal() {
+    if (cargandoMundial) {
+      return <SinDatos>Calculando las campañas mundialistas…</SinDatos>
+    }
+
+    if (errorMundial) {
+      return (
+        <ErrorDatos
+          mensaje={`No pudimos cargar el Mundial Personal: ${errorMundial}`}
+        />
+      )
+    }
+
+    if (!mundial.length) {
+      return <SinDatos>No hay jugadores para mostrar.</SinDatos>
+    }
+
+    const ordenEstados = {
+      'Campeón del mundo': 7,
+      'Final': 6,
+      'Partido por el tercer puesto': 5,
+      'Semifinal': 4,
+      'Cuartos de final': 3,
+      'Octavos de final': 2,
+      'Fase de grupos': 1,
+    }
+
+    const jugadoresOrdenados = [...mundial].sort((a, b) => {
+      if (a.es_campeon !== b.es_campeon) {
+        return a.es_campeon ? -1 : 1
+      }
+
+      const rangoA = ordenEstados[a.estado_actual] || 0
+      const rangoB = ordenEstados[b.estado_actual] || 0
+
+      return rangoB - rangoA || a.nombre.localeCompare(b.nombre, 'es')
+    })
+
+    const simbolosResultado = {
+      G: { simbolo: '✓', etiqueta: 'Victoria', clase: 'mundial-victoria' },
+      E: { simbolo: '🤝', etiqueta: 'Empate', clase: 'mundial-empate' },
+      P: { simbolo: '✕', etiqueta: 'Derrota', clase: 'mundial-derrota' },
+    }
+
+    return (
+      <div className="mundial-contenido">
+        <div className="mundial-intro">
+          <span className="mini-etiqueta">CADA PARTIDO CUENTA</span>
+          <h2>El camino a la gloria.</h2>
+          <p>
+            Cada jugador disputa su propio Mundial. La campaña actual
+            puede cambiar; la gloria conquistada queda para siempre.
+          </p>
+        </div>
+
+        <div className="mundial-diego">
+          <img
+            src="/images/maradona-silueta.png"
+            alt="Silueta de Diego Maradona"
+            className="mundial-diego-imagen"
+          />
+          <div className="mundial-diego-texto">
+            <span className="mundial-diego-etiqueta">
+              EL SUEÑO DE TODO ENRIKO
+            </span>
+            <p>Siete partidos. Una consagración. La gloria eterna.</p>
+          </div>
+        </div>
+
+        <div className="mundial-grid">
+          {jugadoresOrdenados.map((jugador) => {
+            const recorrido = (jugador.recorrido_actual || '')
+              .trim()
+              .split(/\s+/)
+              .filter((resultado) => simbolosResultado[resultado])
+              .reverse()
+
+            return (
+              <article
+                className={`mundial-card ${jugador.es_campeon ? 'mundial-campeon' : ''}`}
+                key={jugador.jugador_id}
+              >
+                <div className="mundial-card-cabecera">
+                  <span className="mundial-avatar">
+                    {(jugador.nombre || '?').trim().charAt(0).toUpperCase()}
+                  </span>
+
+                  <div className="mundial-identidad">
+                    <h3>{jugador.nombre}</h3>
+                    <span>{jugador.partidos_oficiales} partidos oficiales</span>
+                  </div>
+
+                  {jugador.es_campeon && (
+                    <span className="mundial-corona" title="Campeón histórico">
+                      🏆
+                    </span>
+                  )}
+                </div>
+
+                <div className="mundial-dato">
+                  <span className="mini-etiqueta">ESTADO ACTUAL</span>
+                  <strong>{jugador.estado_actual}</strong>
+                </div>
+
+                <div className="mundial-dato">
+                  <span className="mini-etiqueta">CAMPAÑA ACTUAL</span>
+
+                  {recorrido.length > 0 ? (
+                    <div className="mundial-resultados">
+                      {recorrido.map((resultado, indice) => {
+                        const dato = simbolosResultado[resultado]
+                        const cuando =
+                          indice === 0
+                            ? 'Último partido'
+                            : `Hace ${indice} partidos`
+
+                        return (
+                          <span
+                            key={`${jugador.jugador_id}-${indice}`}
+                            className={`mundial-resultado ${dato.clase}`}
+                            title={`${cuando}: ${dato.etiqueta}`}
+                            aria-label={`${cuando}: ${dato.etiqueta}`}
+                          >
+                            {dato.simbolo}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <span className="mundial-sin-recorrido">
+                      Le faltan partidos
+                    </span>
+                  )}
+                </div>
+
+                <div className="mundial-dato mundial-historico">
+                  <span className="mini-etiqueta">
+                    {jugador.es_campeon ? 'GLORIA ETERNA' : 'MEJOR HISTÓRICO'}
+                  </span>
+
+                  <strong>
+                    {jugador.es_campeon
+                      ? '🏆 Campeón del mundo'
+                      : !jugador.mejor_historico ||
+                          jugador.mejor_historico === 'Sin clasificar'
+                        ? 'Fase de grupos'
+                        : jugador.mejor_historico}
+                  </strong>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  /* Nosotros */
+
   function renderNosotros() {
     if (errores.jugadores) return renderError('jugadores')
 
@@ -1198,7 +1005,23 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
       return <SinDatos>No hay integrantes registrados todavía.</SinDatos>
     }
 
-        return (
+    const jugadoresActivos = jugadores.filter(
+      (jugador) => jugador['¿Está en el grupo de Whatsapp?'] === true
+    )
+
+    const conteoInvitados = arbolJugadores.reduce((conteo, item) => {
+      const padrino = item.introducido_por
+
+      if (padrino && !['Fundador', 'Sin información'].includes(padrino)) {
+        conteo[padrino] = (conteo[padrino] || 0) + 1
+      }
+
+      return conteo
+    }, {})
+
+    const maxInvitados = Math.max(0, ...Object.values(conteoInvitados))
+
+    return (
       <>
         <div className="nosotros-foto">
           <img
@@ -1219,7 +1042,7 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
           </div>
         </div>
 
-                <AutogestionPerfil
+        <AutogestionPerfil
           onPerfilGuardado={(jugadorId, perfil) => {
             setJugadores((actuales) =>
               actuales.map((jugador) =>
@@ -1231,420 +1054,271 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
           }}
         />
 
-<div className="integrantes-grid">
-  {(() => {
-    const jugadoresActivos = jugadores.filter(
-      (jugador) => jugador['¿Está en el grupo de Whatsapp?'] === true
-    )
+        <div className="jug-grid">
+          {jugadoresActivos.map((jugador) => {
+            const esFundador = ['Enrico', 'Hugo'].includes(jugador.nombre)
 
-    const conteoInvitados = arbolJugadores.reduce((conteo, item) => {
-      const padrino = item.introducido_por
-
-      if (padrino && !['Fundador', 'Sin información'].includes(padrino)) {
-        conteo[padrino] = (conteo[padrino] || 0) + 1
-      }
-
-      return conteo
-    }, {})
-
-    const maxInvitados = Math.max(0, ...Object.values(conteoInvitados))
-
-    const emblemas = {
-      '10Y_CAMPEON': {
-        icono: '🏆',
-        nombre: 'Campeón aniversario',
-        color: 'campeon',
-      },
-      '10Y_PARTICIPANTE': {
-        icono: '🏅',
-        nombre: 'Participante aniversario',
-        color: 'participante',
-      },
-      SALVADOR_FULBITO: {
-        icono: '🆘',
-        nombre: 'Salvador del fulbito',
-        color: 'salvador',
-      },
-    }
-
-    return jugadoresActivos.map((jugador) => {
-      const ingreso = arbolJugadores.find(
-        (item) => item.jugador === jugador.nombre
-      )
-
-      const esFundador = ['Enrico', 'Hugo'].includes(jugador.nombre)
-
-      const insigniasJugador = insignias.filter(
-        (item) => String(item.jugador_id) === String(jugador.id)
-      )
-
-      const esPrincipalConstructor =
-        !esFundador &&
-        maxInvitados > 0 &&
-        (conteoInvitados[jugador.nombre] || 0) === maxInvitados
-
-      const campania = mundial.find(
-        (item) => String(item.jugador_id) === String(jugador.id)
-      )
-
-      return (
-        <article className="integrante-card" key={jugador.id}>
-          <div className="integrante-identidad">
-            <div className="integrante-iniciales" aria-hidden="true">
-              {(jugador.nombre || '?').trim().charAt(0).toUpperCase()}
-            </div>
-
-            <div className="integrante-identidad-datos">
-              <h3>{jugador.nombre}</h3>
-
-              {esFundador ? (
-                <span className="integrante-logro">★ Fundador</span>
-              ) : (
-                <p className="integrante-ingreso">
-                  Invitado por: {ingreso?.introducido_por || 'Sin información'}
-                </p>
-              )}
-
-              {esPrincipalConstructor && (
-                <span className="integrante-logro integrante-constructor">
-                  🏗️ Principal constructor
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="integrante-contenido">
-            {(jugador.perfil_tactico ||
-              jugador.zona_preferida ||
-              jugador.posiciones_habituales?.length > 0) && (
-              <div className="integrante-perfil">
-                <p className="integrante-perfil-titulo">PERFIL DE JUEGO</p>
-
-                {jugador.perfil_tactico && (
-                  <span
-                    className={`integrante-perfil-tactico perfil-${jugador.perfil_tactico}`}
-                  >
-                    {({
-                      ofensivo: '⚡ Ofensivo',
-                      defensivo: '🛡️ Defensivo',
-                      hibrido: '⚽ Híbrido',
-                    })[jugador.perfil_tactico] || jugador.perfil_tactico}
-                  </span>
+            return (
+              <TarjetaJugador
+                key={jugador.id}
+                jugador={jugador}
+                invitadoPor={
+                  arbolJugadores.find((item) => item.jugador === jugador.nombre)
+                    ?.introducido_por
+                }
+                esFundador={esFundador}
+                esConstructor={
+                  !esFundador &&
+                  maxInvitados > 0 &&
+                  (conteoInvitados[jugador.nombre] || 0) === maxInvitados
+                }
+                insignias={insignias.filter(
+                  (item) => String(item.jugador_id) === String(jugador.id)
                 )}
-
-                {jugador.zona_preferida && (
-                  <p className="integrante-perfil-zona">
-                    <span>Zona preferida</span>
-                    <strong>
-                      {({
-                        central: 'Central',
-                        lateral: 'Lateral',
-                        mixto: 'Mixto',
-                      })[jugador.zona_preferida] || jugador.zona_preferida}
-                    </strong>
-                  </p>
+                campania={mundial.find(
+                  (item) => String(item.jugador_id) === String(jugador.id)
                 )}
-
-                {jugador.posiciones_habituales?.length > 0 && (
-                  <div className="integrante-posiciones">
-                    {jugador.posiciones_habituales.map((posicion) => (
-                      <span key={posicion}>{posicion}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          
-
-<div className="integrante-pie">
-  <div className="integrante-reconocimientos">
-    <p className="integrante-pie-titulo">RECONOCIMIENTOS</p>
-
-    <div className="integrante-insignias">
-      {insigniasJugador.length > 0 ? (
-        insigniasJugador.map((insignia) => {
-          const emblema = emblemas[insignia.codigo] || {
-            icono: '🎖️',
-            nombre: insignia.codigo,
-            color: 'especial',
-          }
-
-          return (
-            <span
-              className={`integrante-insignia insignia-${emblema.color}`}
-              key={insignia.id}
-              title={`${emblema.nombre}: ${insignia.descripcion}`}
-              aria-label={`${emblema.nombre}: ${insignia.descripcion}`}
-              role="img"
-            >
-              {emblema.icono}
-            </span>
-          )
-        })
-      ) : (
-        <span className="integrante-sin-insignias">
-          Sin insignias todavía
-        </span>
-      )}
-    </div>
-  </div>
-
-  <div className="integrante-mundial">
-    <p className="integrante-mundial-titulo">🌎 Mundial Personal</p>
-
-    <span
-      className={`integrante-mundial-estado ${
-        campania?.es_campeon ? 'es-campeon' : ''
-      }`}
-    >
-      {!campania
-        ? 'Fase de grupos'
-        : campania.es_campeon
-          ? '🏆 Campeón del mundo'
-          : campania.mejor_historico}
-    </span>
-  </div>
-</div>
-        </article>
-      )
-    })
-  })()}
-</div>
-
+              />
+            )
+          })}
+        </div>
       </>
     )
   }
 
+  /* Contenido según la sección */
+
   function renderContenido() {
     switch (seccion) {
       case 'Mundial Personal 🌎':
-  return (
-    <section className="pagina interior">
-      <p className="etiqueta">LA GLORIA PERSONAL</p>
-      <h1>Mundial Personal<span>🌎</span></h1>
-      <p className="bajada">
-        Una copa para dominarlos a todos (?)
-      </p>
+        return (
+          <section className="pagina interior">
+            <p className="etiqueta">LA GLORIA PERSONAL</p>
+            <h1>Mundial Personal<span>🌎</span></h1>
+            <p className="bajada">Una copa para dominarlos a todos (?)</p>
 
-      {renderMundialPersonal()}
-    </section>
-  )
+            {renderMundialPersonal()}
+          </section>
+        )
 
-  case 'Cargar partido':
-  return (
-    <section className="pagina interior">
-      <p className="etiqueta">LA CRÓNICA DEL SÁBADO</p>
-      <h1>Cargar partido<span></span></h1>
-      <p className="bajada">
-        Registrá el resultado y los equipos. Para hacerlo necesitás
-        el código del grupo.
-      </p>
+      case 'Cargar partido':
+        return (
+          <section className="pagina interior">
+            <p className="etiqueta">LA CRÓNICA DEL SÁBADO</p>
+            <h1>Cargar partido<span></span></h1>
+            <p className="bajada">
+              Registrá el resultado y los equipos. Para hacerlo necesitás
+              el código del grupo.
+            </p>
 
-      <CargarPartido navegar={navegar} />
-    </section>
-  )
-  case 'Administración':
-    return (
-      <section className="pagina interior">
-        <p className="etiqueta">SOLO PARA ADMINISTRADORES</p>
-        <h1>Administración<span></span></h1>
-        <Admin />
-      </section>
-    )
-  case 'Historial':
-    return (
-      <section className="pagina interior">
-        <p className="etiqueta">PARTIDOS Y EVENTOS ENRIKENSES</p>
-        <h1>Historial<span></span></h1>
-        <p className="bajada">
-          Momentos que no volverán... Pero quedaron registrados para siempre
-        </p>
+            <CargarPartido navegar={navegar} />
+          </section>
+        )
 
-        {renderCalendario()}
-      </section>
-    )
+      case 'Administración':
+        return (
+          <section className="pagina interior">
+            <p className="etiqueta">SOLO PARA ADMINISTRADORES</p>
+            <h1>Administración<span></span></h1>
+            <Admin />
+          </section>
+        )
 
-  case 'Estadísticas':
-    return (
-      <section className="pagina interior">
-        <p className="etiqueta">LOS NÚMEROS TAMBIÉN CUENTAN HISTORIAS</p>
-        <h1>Estadísticas<span></span></h1>
-        <p className="bajada">
-          El registro de los partidos oficiales, los rendimientos
-          individuales y la química entre compañeros
-        </p>
+      case 'Historial':
+        return (
+          <section className="pagina interior">
+            <p className="etiqueta">PARTIDOS Y EVENTOS ENRIKENSES</p>
+            <h1>Historial<span></span></h1>
+            <p className="bajada">
+              Momentos que no volverán... Pero quedaron registrados para siempre
+            </p>
 
-        <div className="seccion-estadisticas">
-          <div className="titulo-tabla">
-            <div>
-              <span className="mini-etiqueta">PUNTAJE ACUMULADO</span>
-              <h2>Tabla general de puntos</h2>
-            </div>
-            <span className="sello-tabla">OFICIAL</span>
-          </div>
+            {renderCalendario()}
+          </section>
+        )
 
-          {renderTablaPuntos()}
-        </div>
+      case 'Estadísticas':
+        return (
+          <section className="pagina interior">
+            <p className="etiqueta">LOS NÚMEROS TAMBIÉN CUENTAN HISTORIAS</p>
+            <h1>Estadísticas<span></span></h1>
+            <p className="bajada">
+              El registro de los partidos oficiales, los rendimientos
+              individuales y la química entre compañeros
+            </p>
 
-        <div className="seccion-estadisticas">
-          <div className="titulo-tabla">
-            <div>
-              <span className="mini-etiqueta">RENDIMIENTO INDIVIDUAL</span>
-              <h2>Ranking de jugadores</h2>
-            </div>
-            <span className="sello-tabla">OFICIAL</span>
-          </div>
-
-          {renderRankingIndividual()}
-        </div>
-      </section>
-    )
-
-  case 'Duplas ⚗️ ':
-    return <Duplas />
-
-        case 'El Muro Enriko':
-          return (
-            <section className="pagina interior muro-pagina">
-              <p className="etiqueta">LA PARED ES DE TODOS</p>
-              <h1>El Muro Enriko<span> ✍️</span></h1>
-              <p className="bajada">
-                Declaraciones, recuerdos, cargadas y manifiestos.
-                Lo que pasa en la cancha...
-              </p>
-  
-              <div className="muro-contenido">
-                <div className="muro-presentacion">
-                  <span className="muro-sello">MURO OFICIAL ENRIKENSE</span>
-                  <h2>Dejá tu huella</h2>
-                  <p>
-                    Una pared, infinitas historias. Escribí algo que
-                    merezca quedar en la memoria enrikense
-                  </p>
+            <div className="seccion-estadisticas">
+              <div className="titulo-tabla">
+                <div>
+                  <span className="mini-etiqueta">PUNTAJE ACUMULADO</span>
+                  <h2>Tabla general de puntos</h2>
                 </div>
-  
-                <form className="muro-formulario" onSubmit={publicarMensajeMuro}>
-                  <h2>Tu pintada</h2>
-  
-                  <label htmlFor="nombre-muro">Nombre o apodo</label>
-                  <input
-                    id="nombre-muro"
-                    type="text"
-                    value={nombreMuro}
-                    onChange={(evento) => setNombreMuro(evento.target.value)}
-                    placeholder="¿Quién deja su marca?"
-                    maxLength={40}
-                    required
-                  />
-  
-                  <label htmlFor="categoria-muro">Tipo de pintada</label>
-                  <select
-                    id="categoria-muro"
-                    value={categoriaMuro}
-                    onChange={(evento) => setCategoriaMuro(evento.target.value)}
-                  >
-                    <option value="Libre">Libre</option>
-                    <option value="Cancha">Cancha</option>
-                    <option value="Humor">Humor</option>
-                    <option value="Recuerdos">Recuerdos</option>
-                    <option value="Declaraciones">Declaraciones</option>
-                    <option value="Feedback">Feedback</option>
-                  </select>
-  
-                  <label htmlFor="mensaje-muro">Tu mensaje</label>
-                  <textarea
-                    id="mensaje-muro"
-                    value={textoMuro}
-                    onChange={(evento) => setTextoMuro(evento.target.value)}
-                    placeholder="La historia te está esperando..."
-                    maxLength={500}
-                    rows={5}
-                    required
-                  />
-                  <input
-                    type="text"
-                    name="sitio-web"
-                    value={trampaMuro}
-                    onChange={(e) => setTrampaMuro(e.target.value)}
-                    tabIndex={-1}
-                    autoComplete="off"
-                    aria-hidden="true"
-                    style={{ position: 'absolute', left: '-9999px' }}
-                  />
-                  <div className="muro-formulario-pie">
-                    <span>{textoMuro.length}/500</span>
-                    <button
-                      type="submit"
-                      className="boton-principal"
-                      disabled={publicandoMuro}
-                    >
-                      {publicandoMuro ? 'Pintando…' : 'Dejar mi marca ✍️'}
-                    </button>
-                  </div>
-  
-                  {avisoMuro && (
-                    <p role="status" className="muro-aviso">
-                      {avisoMuro}
-                    </p>
-                  )}
-                </form>
-  
-                <div className="muro-listado">
-                  <div className="muro-listado-cabecera">
-                    <span className="mini-etiqueta">LAS VOCES DEL CLUB</span>
-                    <h2>Lo que quedó escrito</h2>
-                  </div>
-  
-                  {cargandoMuro ? (
-                    <p className="muro-vacio">Leyendo la pared…</p>
-                  ) : errorMuro ? (
-                    <p className="muro-vacio">
-                      No pudimos cargar los mensajes: {errorMuro}
-                    </p>
-                  ) : mensajesMuro.length === 0 ? (
-                    <p className="muro-vacio">
-                      La pared todavía está en blanco. ¿Quién se anima a
-                      inaugurarla?
-                    </p>
-                  ) : (
-                    <div className="muro-mensajes">
-                      {mensajesMuro.map((mensaje) => (
-                        <article className="muro-mensaje" key={mensaje.id}>
-                          <div className="muro-mensaje-cabecera">
-                            <strong>{mensaje.nombre}</strong>
-                            <span>{mensaje.categoria}</span>
-                          </div>
-                          <p>{mensaje.mensaje}</p>
-                          <time dateTime={mensaje.created_at}>
-                            {new Date(mensaje.created_at).toLocaleString('es-AR', {
-                              dateStyle: 'medium',
-                              timeStyle: 'short',
-                            })}
-                          </time>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <span className="sello-tabla">OFICIAL</span>
               </div>
-            </section>
-          )
-  
-        case 'Próximo sábado':
-          return (
-            <section className="pagina interior">
-              <p className="etiqueta">ESPACIO SEGURO PARA LOS ANTI-CIENCIA</p>
-              <h1>Pronosticador<span></span></h1>
-              <p className="bajada">
-                Armá los equipos, compará sus ratings y consultá
-                lo que vaticina el Oráculo Enrikista.
-              </p>
-        
-              <TeamSelector />
-            </section>
-          )
+
+              {renderTablaPuntos()}
+            </div>
+
+            <div className="seccion-estadisticas">
+              <div className="titulo-tabla">
+                <div>
+                  <span className="mini-etiqueta">RENDIMIENTO INDIVIDUAL</span>
+                  <h2>Ranking de jugadores</h2>
+                </div>
+                <span className="sello-tabla">OFICIAL</span>
+              </div>
+
+              {renderRankingIndividual()}
+            </div>
+          </section>
+        )
+
+      case 'Duplas ⚗️ ':
+        return <Duplas />
+
+      case 'El Muro Enriko':
+        return (
+          <section className="pagina interior muro-pagina">
+            <p className="etiqueta">LA PARED ES DE TODOS</p>
+            <h1>El Muro Enriko<span> ✍️</span></h1>
+            <p className="bajada">
+              Declaraciones, recuerdos, cargadas y manifiestos.
+              Lo que pasa en la cancha...
+            </p>
+
+            <div className="muro-contenido">
+              <div className="muro-presentacion">
+                <span className="muro-sello">MURO OFICIAL ENRIKENSE</span>
+                <h2>Dejá tu huella</h2>
+                <p>
+                  Una pared, infinitas historias. Escribí algo que
+                  merezca quedar en la memoria enrikense
+                </p>
+              </div>
+
+              <form className="muro-formulario" onSubmit={publicarMensajeMuro}>
+                <h2>Tu pintada</h2>
+
+                <label htmlFor="nombre-muro">Nombre o apodo</label>
+                <input
+                  id="nombre-muro"
+                  type="text"
+                  value={nombreMuro}
+                  onChange={(evento) => setNombreMuro(evento.target.value)}
+                  placeholder="¿Quién deja su marca?"
+                  maxLength={40}
+                  required
+                />
+
+                <label htmlFor="categoria-muro">Tipo de pintada</label>
+                <select
+                  id="categoria-muro"
+                  value={categoriaMuro}
+                  onChange={(evento) => setCategoriaMuro(evento.target.value)}
+                >
+                  <option value="Libre">Libre</option>
+                  <option value="Cancha">Cancha</option>
+                  <option value="Humor">Humor</option>
+                  <option value="Recuerdos">Recuerdos</option>
+                  <option value="Declaraciones">Declaraciones</option>
+                  <option value="Feedback">Feedback</option>
+                </select>
+
+                <label htmlFor="mensaje-muro">Tu mensaje</label>
+                <textarea
+                  id="mensaje-muro"
+                  value={textoMuro}
+                  onChange={(evento) => setTextoMuro(evento.target.value)}
+                  placeholder="La historia te está esperando..."
+                  maxLength={500}
+                  rows={5}
+                  required
+                />
+
+                <input
+                  type="text"
+                  name="sitio-web"
+                  value={trampaMuro}
+                  onChange={(e) => setTrampaMuro(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  style={{ position: 'absolute', left: '-9999px' }}
+                />
+
+                <div className="muro-formulario-pie">
+                  <span>{textoMuro.length}/500</span>
+                  <button
+                    type="submit"
+                    className="boton-principal"
+                    disabled={publicandoMuro}
+                  >
+                    {publicandoMuro ? 'Pintando…' : 'Dejar mi marca ✍️'}
+                  </button>
+                </div>
+
+                {avisoMuro && (
+                  <p role="status" className="muro-aviso">
+                    {avisoMuro}
+                  </p>
+                )}
+              </form>
+
+              <div className="muro-listado">
+                <div className="muro-listado-cabecera">
+                  <span className="mini-etiqueta">LAS VOCES DEL CLUB</span>
+                  <h2>Lo que quedó escrito</h2>
+                </div>
+
+                {cargandoMuro ? (
+                  <p className="muro-vacio">Leyendo la pared…</p>
+                ) : errorMuro ? (
+                  <p className="muro-vacio">
+                    No pudimos cargar los mensajes: {errorMuro}
+                  </p>
+                ) : mensajesMuro.length === 0 ? (
+                  <p className="muro-vacio">
+                    La pared todavía está en blanco. ¿Quién se anima a
+                    inaugurarla?
+                  </p>
+                ) : (
+                  <div className="muro-mensajes">
+                    {mensajesMuro.map((mensaje) => (
+                      <article className="muro-mensaje" key={mensaje.id}>
+                        <div className="muro-mensaje-cabecera">
+                          <strong>{mensaje.nombre}</strong>
+                          <span>{mensaje.categoria}</span>
+                        </div>
+                        <p>{mensaje.mensaje}</p>
+                        <time dateTime={mensaje.created_at}>
+                          {new Date(mensaje.created_at).toLocaleString('es-AR', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          })}
+                        </time>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'Próximo sábado':
+        return (
+          <section className="pagina interior">
+            <p className="etiqueta">ESPACIO SEGURO PARA LOS ANTI-CIENCIA</p>
+            <h1>Pronosticador<span></span></h1>
+            <p className="bajada">
+              Armá los equipos, compará sus ratings y consultá
+              lo que vaticina el Oráculo Enrikista.
+            </p>
+
+            <TeamSelector />
+          </section>
+        )
+
       case 'Nosotros':
         return (
           <section className="pagina interior">
@@ -1659,22 +1333,22 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
           </section>
         )
 
-        case '¿Quiénes somos?':
-          default:
-            return (
-              <Inicio
-                partidos={partidos}
-                detallesVotacion={detallesVotacion}
-                puntosJugadores={puntosJugadores}
-                cargando={cargando}
-                errores={errores}
-                formatearFecha={formatearFecha}
-                numero={numero}
-                navegar={navegar}
-              />
-            )
-        }
-      }
+      case '¿Quiénes somos?':
+      default:
+        return (
+          <Inicio
+            partidos={partidos}
+            detallesVotacion={detallesVotacion}
+            puntosJugadores={puntosJugadores}
+            cargando={cargando}
+            errores={errores}
+            formatearFecha={formatearFecha}
+            numero={numero}
+            navegar={navegar}
+          />
+        )
+    }
+  }
 
   return (
     <div className="sitio">
@@ -1711,14 +1385,14 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
       </header>
 
       <main>
-  {partidoParaVotar ? (
-    <Votacion partidoId={partidoParaVotar} />
-  ) : (
-    renderContenido()
-  )}
-</main>
+        {partidoParaVotar ? (
+          <Votacion partidoId={partidoParaVotar} />
+        ) : (
+          renderContenido()
+        )}
+      </main>
 
-<footer className="pie">
+      <footer className="pie">
         <div className="pie-marca">
           <img src="/escudo-somos-enriko.jpg" alt="" />
           <div>
@@ -1741,4 +1415,5 @@ aria-label={`${indice === 0 ? 'Último partido' : `Hace ${indice} partidos`}: ${
     </div>
   )
 }
+
 export default App

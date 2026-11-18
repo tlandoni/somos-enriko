@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
 import './AutogestionPerfil.css'
@@ -19,6 +18,7 @@ const POSICIONES = [
 const FORMULARIO_VACIO = {
   perfil_tactico: '',
   zona_preferida: '',
+  pie_habil: '',
   posiciones_habituales: [],
 }
 
@@ -102,7 +102,7 @@ export default function AutogestionPerfil({ onPerfilGuardado }) {
         const { data, error } = await supabase
           .from('jugadores')
           .select(
-            'id, nombre, perfil_tactico, zona_preferida, posiciones_habituales'
+            'id, nombre, perfil_tactico, zona_preferida, pie_habil, posiciones_habituales'
           )
           .eq('id', vinculacion.jugador_id)
           .single()
@@ -116,6 +116,7 @@ export default function AutogestionPerfil({ onPerfilGuardado }) {
           setFormulario({
             perfil_tactico: data.perfil_tactico || '',
             zona_preferida: data.zona_preferida || '',
+            pie_habil: data.pie_habil || '',
             posiciones_habituales: data.posiciones_habituales || [],
           })
         }
@@ -173,7 +174,7 @@ export default function AutogestionPerfil({ onPerfilGuardado }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}${window.location.pathname}?seccion=${encodeURIComponent('Nosotros')}`,
+        redirectTo: `${window.location.origin}/nosotros`,
       },
     })
 
@@ -218,6 +219,7 @@ export default function AutogestionPerfil({ onPerfilGuardado }) {
       ...elegido,
       perfil_tactico: null,
       zona_preferida: null,
+      pie_habil: null,
       posiciones_habituales: [],
     })
     setFormulario(FORMULARIO_VACIO)
@@ -257,9 +259,10 @@ export default function AutogestionPerfil({ onPerfilGuardado }) {
     if (
       !formulario.perfil_tactico ||
       !formulario.zona_preferida ||
+      !formulario.pie_habil ||
       formulario.posiciones_habituales.length < 1
     ) {
-      setAviso('Completá el perfil, la zona y al menos una posición.')
+      setAviso('Completá el perfil, la zona, el pie hábil y al menos una posición.')
       return
     }
 
@@ -269,6 +272,7 @@ export default function AutogestionPerfil({ onPerfilGuardado }) {
     const { data, error } = await supabase.rpc('guardar_mi_perfil', {
       p_perfil_tactico: formulario.perfil_tactico,
       p_zona_preferida: formulario.zona_preferida,
+      p_pie_habil: formulario.pie_habil,
       p_posiciones_habituales: formulario.posiciones_habituales,
     })
 
@@ -358,6 +362,19 @@ export default function AutogestionPerfil({ onPerfilGuardado }) {
               <option value="central">Central</option>
               <option value="lateral">Lateral</option>
               <option value="mixto">Mixto</option>
+            </select>
+          </label>
+
+          <label>
+            ¿Con qué pie jugás?
+            <select
+              value={formulario.pie_habil}
+              onChange={(e) => actualizarCampo('pie_habil', e.target.value)}
+            >
+              <option value="">Elegir pie hábil</option>
+              <option value="derecho">Derecho</option>
+              <option value="izquierdo">Zurdo (izquierdo)</option>
+              <option value="ambidiestro">Ambidiestro</option>
             </select>
           </label>
 
